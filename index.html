@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lincoln Elementary School Simulator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="game">
+    <header class="topbar">
+      <div>
+        <h1>🏫 LINCOLN ELEMENTARY</h1>
+        <p>K–6 Elementary School</p>
+      </div>
+
+      <nav class="tabs" aria-label="Main navigation">
+        <button class="tab active" data-tab="overview">🏠 Overview</button>
+        <button class="tab" data-tab="staff">👥 Staff</button>
+        <button class="tab" data-tab="budget">💰 Budget</button>
+        <button class="tab" data-tab="reports">📄 Reports</button>
+      </nav>
+
+      <button id="advanceYearTop" class="advance-btn">Advance Year →</button>
+    </header>
+
+    <section class="metrics" aria-label="School metrics">
+      <div class="metric"><span>School Year</span><strong id="mYear"></strong></div>
+      <div class="metric"><span>Enrollment</span><strong id="mEnroll"></strong><small id="mProjected"></small></div>
+      <div class="metric"><span>Classroom Teachers</span><strong id="mTeachers"></strong><small id="mNeeded"></small></div>
+      <div class="metric"><span>Budget</span><strong id="mBudget"></strong><small id="mRemaining"></small></div>
+      <div class="metric"><span>Avg. Class Size</span><strong id="mClass"></strong><small>Target 22</small></div>
+      <div class="metric"><span>Vacant Classrooms</span><strong id="mOpen"></strong></div>
+      <div class="metric"><span>Staffing Alerts</span><strong id="mAlerts"></strong></div>
+    </section>
+
+    <main>
+      <section id="overviewTab" class="tab-panel">
+        <div class="game-grid">
+          <div class="main-column">
+            <section class="floor-card">
+              <div class="floor-grid">
+                <div>
+                  <div class="wing-title k-title">KINDERGARTEN</div>
+                  <div id="wingK" class="room-stack"></div>
+
+                  <div class="wing-title g3-title">GRADE 3</div>
+                  <div id="wing3" class="room-stack"></div>
+
+                  <div class="wing-title g5-title">GRADE 5</div>
+                  <div id="wing5" class="room-stack"></div>
+                </div>
+
+                <div>
+                  <div class="wing-title g1-title">GRADE 1</div>
+                  <div id="wing1" class="room-stack"></div>
+
+                  <div class="primary-hall">
+                    <strong>PRIMARY HALL</strong>
+                    <div class="hall-icons">🪑 🪴 🪑</div>
+                    <small>Main student circulation</small>
+                  </div>
+
+                  <div id="supportGrid" class="support-grid"></div>
+
+                  <div class="shared-row two">
+                    <button type="button" data-room="LIB" class="room common">
+                      <strong>LIBRARY / MEDIA</strong>
+                      <span id="libTeacher"></span>
+                      <div class="icon">📚</div>
+                    </button>
+                    <button type="button" data-room="CAF" class="room common">
+                      <strong>CAFETERIA</strong>
+                      <div class="icon">🍽️</div>
+                    </button>
+                  </div>
+
+                  <div class="shared-row three">
+                    <button type="button" data-room="GYM" class="room special">
+                      <strong>GYM</strong>
+                      <span id="gymTeacher"></span>
+                      <div>🏀</div>
+                    </button>
+                    <button type="button" data-room="MUSIC" class="room special">
+                      <strong>MUSIC</strong>
+                      <span id="musicTeacher"></span>
+                      <div>🎵</div>
+                    </button>
+                    <button type="button" data-room="ART" class="room special">
+                      <strong>ART</strong>
+                      <span id="artTeacher"></span>
+                      <div>🎨</div>
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <div class="wing-title g2-title">GRADE 2</div>
+                  <div id="wing2" class="room-stack"></div>
+
+                  <div class="wing-title g4-title">GRADE 4</div>
+                  <div id="wing4" class="room-stack"></div>
+
+                  <div class="wing-title g6-title">GRADE 6</div>
+                  <div id="wing6" class="room-stack"></div>
+                </div>
+              </div>
+
+              <div class="legend">
+                <span>🟢 On Track</span>
+                <span>🟠 Understaffed</span>
+                <span>🔴 Over Capacity</span>
+                <span>⚪ Vacant</span>
+              </div>
+            </section>
+
+            <section class="bottom-panels">
+              <div class="mini-card">
+                <h3>GRADE STAFFING SUMMARY</h3>
+                <div id="staffSummary" class="summary-grid"></div>
+              </div>
+              <div class="mini-card">
+                <h3>NEXT YEAR CENSUS</h3>
+                <div id="projectionSummary" class="summary-grid"></div>
+              </div>
+              <div class="mini-card">
+                <h3>BUDGET BREAKDOWN</h3>
+                <div class="budget-bar">
+                  <div id="salaryBar" class="salary"></div>
+                  <div class="benefits"></div>
+                  <div class="supplies"></div>
+                  <div class="other"></div>
+                </div>
+                <small>Salaries <span id="salaryPct"></span> · Benefits 12% · Supplies 5% · Other 5%</small>
+              </div>
+            </section>
+          </div>
+
+          <aside class="sidebar">
+            <section class="panel">
+              <h2>SELECTED ROOM</h2>
+              <div id="roomPanel" class="panel-body">Click a room on the floor plan.</div>
+            </section>
+
+            <section class="panel">
+              <h2>ASSIGN / MOVE TEACHER</h2>
+              <div class="panel-body">
+                <select id="teacherSelect"></select>
+                <button id="clearTeacher" class="secondary-btn">Clear Selection</button>
+                <small>Choose a teacher, then click an open classroom or specials room.</small>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>QUICK ACTIONS</h2>
+              <div class="panel-body quick-actions">
+                <button id="hireClassroom">👤 Hire Classroom</button>
+                <button id="hireSpecial">🎨 Hire Specials</button>
+                <button id="doEval">📋 Evaluation</button>
+                <button id="showSalary">💵 Salaries</button>
+                <button id="showCensus">📈 Census</button>
+              </div>
+            </section>
+
+            <section class="panel">
+              <h2>UPCOMING EVENTS</h2>
+              <div class="panel-body">
+                <p><strong>Aug 12</strong> Teacher Work Day</p>
+                <p><strong>Aug 13</strong> First Student Day</p>
+                <p><strong>Sep 7</strong> No School</p>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </section>
+
+      <section id="secondaryTab" class="tab-panel hidden">
+        <button id="backOverview" class="secondary-btn">← Back to Floor Plan</button>
+        <div id="secondaryContent"></div>
+      </section>
+    </main>
+
+    <footer id="message" class="message" aria-live="polite">
+      <strong>Welcome:</strong> Each student cohort moves up one grade every year. Grade 6 exits and a new kindergarten census enters.
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
