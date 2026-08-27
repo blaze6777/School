@@ -226,7 +226,7 @@ function generateBoardIssue(s=state,initial=false){
     {title:"Technology Refresh",description:"Replace aging classroom laptops and interactive displays.",cost:85000,effect:"tech"},
     {title:"Add Assistant Custodian",description:"Increase evening custodial staffing and reduce deferred cleaning.",cost:41000,effect:"custodian"},
     {title:"Cut One Classroom Position",description:"Reduce payroll by eliminating one vacant or excess teaching position.",cost:-56000,effect:"cutTeacher"},
-    {title:"2.5% Salary Increase",description:"Approve a district-wide 2.5% salary increase for all school employees.",cost:Math.round(payroll()*.025),effect:"raise",percent:2.5}
+    {title:"2.5% Salary Increase",description:"Approve a district-wide 2.5% salary increase for all school employees.",cost:Math.round(s.employees.filter(e=>e.status!=="Resigned"&&e.status!=="Retired"&&e.status!=="Terminated").reduce((sum,e)=>sum+e.salary,0)*.025),effect:"raise",percent:2.5}
   ];
   const x={...options[rand(0,options.length-1)],id:Date.now()+rand(1,9999)};s.boardIssues.push(x);if(!initial)setMessage(`<strong>New board issue:</strong> ${x.title}`);
 }
