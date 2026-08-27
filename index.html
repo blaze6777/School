@@ -1,190 +1,150 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Lincoln Elementary School Simulator</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="game">
-    <header class="topbar">
-      <div>
-        <h1>🏫 LINCOLN ELEMENTARY</h1>
-        <p>K–6 Elementary School</p>
+<div id="app">
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-title">🏫 LINCOLN ELEMENTARY</div>
+      <div class="brand-sub">K–6 School Management Simulator</div>
+    </div>
+    <nav class="nav-tabs" aria-label="Game sections">
+      <button class="nav-btn active" data-view="overview">🏠 Overview</button>
+      <button class="nav-btn" data-view="staff">👥 Staff</button>
+      <button class="nav-btn" data-view="students">🎒 Students</button>
+      <button class="nav-btn" data-view="hr">📋 HR</button>
+      <button class="nav-btn" data-view="budget">💰 Budget</button>
+      <button class="nav-btn" data-view="board">🏛️ Board</button>
+    </nav>
+    <div class="top-actions">
+      <button id="saveBtn" class="secondary top">💾 Save</button>
+      <button id="loadBtn" class="secondary top">↻ Load</button>
+      <button id="advanceYearBtn" class="advance">Advance Year →</button>
+    </div>
+  </header>
+
+  <section class="metrics">
+    <div class="metric"><span>School Year</span><strong id="metricYear"></strong></div>
+    <div class="metric"><span>Enrollment</span><strong id="metricEnrollment"></strong><small id="metricEnrollmentNext"></small></div>
+    <div class="metric"><span>Total Staff</span><strong id="metricStaff"></strong><small id="metricOpenings"></small></div>
+    <div class="metric"><span>Annual Budget</span><strong id="metricBudget"></strong><small id="metricPayroll"></small></div>
+    <div class="metric"><span>Avg Class Size</span><strong id="metricClassSize"></strong></div>
+    <div class="metric"><span>Vacant Rooms</span><strong id="metricRooms"></strong></div>
+    <div class="metric"><span>Alerts</span><strong id="metricAlerts"></strong></div>
+  </section>
+
+  <main>
+    <section id="view-overview" class="view active-view">
+      <div class="game-grid">
+        <div class="main-col">
+          <section class="card floor-card">
+            <div class="section-head">
+              <div>
+                <h2>School Floor Plan</h2>
+                <p>Every grade has three permanent classrooms. Open rooms stay available for future census growth.</p>
+              </div>
+              <div class="legend"><span>🟢 On Track</span><span>🟠 Staffing Issue</span><span>🔴 Over Capacity</span><span>⚪ Vacant</span></div>
+            </div>
+            <div class="floor-grid">
+              <div>
+                <div class="wing-title k-title">KINDERGARTEN</div><div id="wingK" class="room-stack"></div>
+                <div class="wing-title g3-title">GRADE 3</div><div id="wing3" class="room-stack"></div>
+                <div class="wing-title g5-title">GRADE 5</div><div id="wing5" class="room-stack"></div>
+              </div>
+              <div>
+                <div class="wing-title g1-title">GRADE 1</div><div id="wing1" class="room-stack"></div>
+                <div class="primary-hall"><strong>PRIMARY HALL</strong><div class="hall-icons">🪑 🪴 🪑</div><small>Main student circulation</small></div>
+                <div id="supportRooms" class="support-grid"></div>
+                <div class="shared-row two">
+                  <button class="room common" data-special-room="LIB"><strong>LIBRARY / MEDIA</strong><span id="label-LIB"></span><div class="icon">📚</div></button>
+                  <button class="room common" data-special-room="CAF"><strong>CAFETERIA</strong><span id="label-CAF"></span><div class="icon">🍽️</div></button>
+                </div>
+                <div class="shared-row three">
+                  <button class="room special" data-special-room="GYM"><strong>GYM / PE</strong><span id="label-GYM"></span><div>🏀</div></button>
+                  <button class="room special" data-special-room="MUSIC"><strong>MUSIC</strong><span id="label-MUSIC"></span><div>🎵</div></button>
+                  <button class="room special" data-special-room="ART"><strong>ART</strong><span id="label-ART"></span><div>🎨</div></button>
+                </div>
+              </div>
+              <div>
+                <div class="wing-title g2-title">GRADE 2</div><div id="wing2" class="room-stack"></div>
+                <div class="wing-title g4-title">GRADE 4</div><div id="wing4" class="room-stack"></div>
+                <div class="wing-title g6-title">GRADE 6</div><div id="wing6" class="room-stack"></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="bottom-panels">
+            <div class="card mini"><h3>GRADE STAFFING</h3><div id="staffingSummary" class="summary-grid"></div></div>
+            <div class="card mini"><h3>NEXT YEAR CENSUS</h3><div id="censusSummary" class="summary-grid"></div></div>
+            <div class="card mini"><h3>ACTIVE LEAVES</h3><div id="leaveSummary" class="compact-list"></div></div>
+          </section>
+        </div>
+
+        <aside class="sidebar">
+          <section class="panel"><h2>SELECTED ROOM</h2><div id="roomDetails" class="panel-body">Click a classroom or special area.</div></section>
+          <section class="panel"><h2>MOVE / ASSIGN STAFF</h2><div class="panel-body"><select id="assignStaffSelect"></select><button id="clearSelectionBtn" class="secondary full">Clear Selection</button><small>Select an employee, then click an appropriate room.</small></div></section>
+          <section class="panel"><h2>QUICK ACTIONS</h2><div class="panel-body quick-grid"><button id="hireTeacherBtn">👤 Hire Teacher</button><button id="hireStaffBtn">🧰 Hire Staff</button><button id="evaluateBtn">📋 Evaluate</button><button id="leaveBtn">🩺 Add Leave</button><button id="transferBtn">🔁 Transfer</button><button id="rosterBtn">🎒 Class Roster</button></div></section>
+          <section class="panel"><h2>UPCOMING / DISTRICT</h2><div id="eventList" class="panel-body compact-list"></div></section>
+        </aside>
       </div>
-
-      <nav class="tabs" aria-label="Main navigation">
-        <button class="tab active" data-tab="overview">🏠 Overview</button>
-        <button class="tab" data-tab="staff">👥 Staff</button>
-        <button class="tab" data-tab="budget">💰 Budget</button>
-        <button class="tab" data-tab="reports">📄 Reports</button>
-      </nav>
-
-      <button id="advanceYearTop" class="advance-btn">Advance Year →</button>
-    </header>
-
-    <section class="metrics" aria-label="School metrics">
-      <div class="metric"><span>School Year</span><strong id="mYear"></strong></div>
-      <div class="metric"><span>Enrollment</span><strong id="mEnroll"></strong><small id="mProjected"></small></div>
-      <div class="metric"><span>Classroom Teachers</span><strong id="mTeachers"></strong><small id="mNeeded"></small></div>
-      <div class="metric"><span>Budget</span><strong id="mBudget"></strong><small id="mRemaining"></small></div>
-      <div class="metric"><span>Avg. Class Size</span><strong id="mClass"></strong><small>Target 22</small></div>
-      <div class="metric"><span>Vacant Classrooms</span><strong id="mOpen"></strong></div>
-      <div class="metric"><span>Staffing Alerts</span><strong id="mAlerts"></strong></div>
     </section>
 
-    <main>
-      <section id="overviewTab" class="tab-panel">
-        <div class="game-grid">
-          <div class="main-column">
-            <section class="floor-card">
-              <div class="floor-grid">
-                <div>
-                  <div class="wing-title k-title">KINDERGARTEN</div>
-                  <div id="wingK" class="room-stack"></div>
+    <section id="view-staff" class="view">
+      <div class="card padded">
+        <div class="section-head"><div><h2>All Employees</h2><p>Teachers, administrators, instructional support, operations, cafeteria, technology, and student services.</p></div><div><button id="staffHireTeacherBtn" class="secondary">Hire Teacher</button> <button id="staffHireOtherBtn" class="secondary">Hire Other Staff</button></div></div>
+        <div class="toolbar"><select id="staffCategoryFilter"><option value="all">All Categories</option></select><input id="staffSearch" placeholder="Search employee..." /></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Employee</th><th>Position</th><th>Assignment</th><th>Age</th><th>Experience</th><th>Degree</th><th>License</th><th>Contract</th><th>Salary</th><th>Status</th></tr></thead><tbody id="staffTableBody"></tbody></table></div>
+      </div>
+    </section>
 
-                  <div class="wing-title g3-title">GRADE 3</div>
-                  <div id="wing3" class="room-stack"></div>
+    <section id="view-students" class="view">
+      <div class="card padded">
+        <div class="section-head"><div><h2>Students & Class Rosters</h2><p>Individual students are promoted with their cohort each year.</p></div><button id="generateStudentBtn" class="secondary">Add New Student</button></div>
+        <div class="toolbar"><select id="studentGradeFilter"><option value="all">All Grades</option></select><select id="studentRoomFilter"><option value="all">All Rooms</option></select><input id="studentSearch" placeholder="Search student..." /></div>
+        <div class="table-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Grade</th><th>Room</th><th>Teacher</th><th>IEP</th><th>504</th><th>Attendance</th></tr></thead><tbody id="studentTableBody"></tbody></table></div>
+      </div>
+    </section>
 
-                  <div class="wing-title g5-title">GRADE 5</div>
-                  <div id="wing5" class="room-stack"></div>
-                </div>
+    <section id="view-hr" class="view">
+      <div class="hr-grid">
+        <section class="card padded"><h2>Salary Schedule</h2><p class="muted">Teacher salary = education lane + experience step + negotiated increases.</p><div class="table-wrap"><table class="data-table"><thead><tr><th>Step</th><th>Bachelor's</th><th>Master's</th><th>Master's +30</th></tr></thead><tbody id="salaryScheduleBody"></tbody></table></div></section>
+        <section class="card padded"><h2>Contracts & Licensure</h2><div id="contractSummary" class="stat-grid"></div><div id="licenseAlerts" class="compact-list"></div></section>
+        <section class="card padded"><h2>Leave Management</h2><div id="leaveTable"></div></section>
+        <section class="card padded"><h2>Recent HR Events</h2><div id="hrEvents" class="compact-list"></div></section>
+      </div>
+    </section>
 
-                <div>
-                  <div class="wing-title g1-title">GRADE 1</div>
-                  <div id="wing1" class="room-stack"></div>
+    <section id="view-budget" class="view">
+      <div class="budget-grid">
+        <section class="card padded"><h2>Operating Budget</h2><div id="budgetCards" class="stat-grid"></div><div class="budget-bar"><div id="barPayroll" class="bar-payroll"></div><div class="bar-benefits"></div><div class="bar-ops"></div></div></section>
+        <section class="card padded"><h2>Payroll by Category</h2><div id="payrollByCategory"></div></section>
+        <section class="card padded"><h2>Salary Schedule Action</h2><p class="muted">Board-approved raises change all salaries going forward.</p><div class="inline-form"><label>Proposed raise % <input id="raisePercent" type="number" min="0" max="10" step="0.25" value="2.5" /></label><button id="proposeRaiseBtn" class="secondary">Send to Board</button></div></section>
+      </div>
+    </section>
 
-                  <div class="primary-hall">
-                    <strong>PRIMARY HALL</strong>
-                    <div class="hall-icons">🪑 🪴 🪑</div>
-                    <small>Main student circulation</small>
-                  </div>
+    <section id="view-board" class="view">
+      <div class="board-grid">
+        <section class="card padded"><div class="section-head"><div><h2>School Board Agenda</h2><p>Major decisions require a board vote.</p></div><button id="newBoardIssueBtn" class="secondary">Generate Issue</button></div><div id="boardIssues"></div></section>
+        <section class="card padded"><h2>Board Relationship</h2><div id="boardRelationship"></div><h3>Recent Decisions</h3><div id="boardHistory" class="compact-list"></div></section>
+      </div>
+    </section>
+  </main>
 
-                  <div id="supportGrid" class="support-grid"></div>
+  <div id="messageBar" class="message-bar" aria-live="polite"><strong>Welcome:</strong> Your expanded school simulator is ready.</div>
+</div>
 
-                  <div class="shared-row two">
-                    <button type="button" data-room="LIB" class="room common">
-                      <strong>LIBRARY / MEDIA</strong>
-                      <span id="libTeacher"></span>
-                      <div class="icon">📚</div>
-                    </button>
-                    <button type="button" data-room="CAF" class="room common">
-                      <strong>CAFETERIA</strong>
-                      <div class="icon">🍽️</div>
-                    </button>
-                  </div>
-
-                  <div class="shared-row three">
-                    <button type="button" data-room="GYM" class="room special">
-                      <strong>GYM</strong>
-                      <span id="gymTeacher"></span>
-                      <div>🏀</div>
-                    </button>
-                    <button type="button" data-room="MUSIC" class="room special">
-                      <strong>MUSIC</strong>
-                      <span id="musicTeacher"></span>
-                      <div>🎵</div>
-                    </button>
-                    <button type="button" data-room="ART" class="room special">
-                      <strong>ART</strong>
-                      <span id="artTeacher"></span>
-                      <div>🎨</div>
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <div class="wing-title g2-title">GRADE 2</div>
-                  <div id="wing2" class="room-stack"></div>
-
-                  <div class="wing-title g4-title">GRADE 4</div>
-                  <div id="wing4" class="room-stack"></div>
-
-                  <div class="wing-title g6-title">GRADE 6</div>
-                  <div id="wing6" class="room-stack"></div>
-                </div>
-              </div>
-
-              <div class="legend">
-                <span>🟢 On Track</span>
-                <span>🟠 Understaffed</span>
-                <span>🔴 Over Capacity</span>
-                <span>⚪ Vacant</span>
-              </div>
-            </section>
-
-            <section class="bottom-panels">
-              <div class="mini-card">
-                <h3>GRADE STAFFING SUMMARY</h3>
-                <div id="staffSummary" class="summary-grid"></div>
-              </div>
-              <div class="mini-card">
-                <h3>NEXT YEAR CENSUS</h3>
-                <div id="projectionSummary" class="summary-grid"></div>
-              </div>
-              <div class="mini-card">
-                <h3>BUDGET BREAKDOWN</h3>
-                <div class="budget-bar">
-                  <div id="salaryBar" class="salary"></div>
-                  <div class="benefits"></div>
-                  <div class="supplies"></div>
-                  <div class="other"></div>
-                </div>
-                <small>Salaries <span id="salaryPct"></span> · Benefits 12% · Supplies 5% · Other 5%</small>
-              </div>
-            </section>
-          </div>
-
-          <aside class="sidebar">
-            <section class="panel">
-              <h2>SELECTED ROOM</h2>
-              <div id="roomPanel" class="panel-body">Click a room on the floor plan.</div>
-            </section>
-
-            <section class="panel">
-              <h2>ASSIGN / MOVE TEACHER</h2>
-              <div class="panel-body">
-                <select id="teacherSelect"></select>
-                <button id="clearTeacher" class="secondary-btn">Clear Selection</button>
-                <small>Choose a teacher, then click an open classroom or specials room.</small>
-              </div>
-            </section>
-
-            <section class="panel">
-              <h2>QUICK ACTIONS</h2>
-              <div class="panel-body quick-actions">
-                <button id="hireClassroom">👤 Hire Classroom</button>
-                <button id="hireSpecial">🎨 Hire Specials</button>
-                <button id="doEval">📋 Evaluation</button>
-                <button id="showSalary">💵 Salaries</button>
-                <button id="showCensus">📈 Census</button>
-              </div>
-            </section>
-
-            <section class="panel">
-              <h2>UPCOMING EVENTS</h2>
-              <div class="panel-body">
-                <p><strong>Aug 12</strong> Teacher Work Day</p>
-                <p><strong>Aug 13</strong> First Student Day</p>
-                <p><strong>Sep 7</strong> No School</p>
-              </div>
-            </section>
-          </aside>
-        </div>
-      </section>
-
-      <section id="secondaryTab" class="tab-panel hidden">
-        <button id="backOverview" class="secondary-btn">← Back to Floor Plan</button>
-        <div id="secondaryContent"></div>
-      </section>
-    </main>
-
-    <footer id="message" class="message" aria-live="polite">
-      <strong>Welcome:</strong> Each student cohort moves up one grade every year. Grade 6 exits and a new kindergarten census enters.
-    </footer>
+<div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <div class="modal-card">
+    <div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="icon-btn" aria-label="Close">✕</button></div>
+    <div id="modalBody" class="modal-body"></div>
   </div>
+</div>
 
-  <script src="app.js"></script>
+<script src="app.js"></script>
 </body>
 </html>
