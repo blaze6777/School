@@ -205,17 +205,37 @@ function roomSeverity(r){
  return "";
 }
 
+function reportSectionError(name,err){
+ console.error(`[Lincoln ${name}]`,err);
+ const view=document.getElementById(`view-${name}`);
+ if(view && !view.querySelector('.section-error')){
+   const box=document.createElement('div');box.className='section-error';
+   box.innerHTML=`<strong>${name[0].toUpperCase()+name.slice(1)} section had a loading problem.</strong><br><span>${String(err?.message||err)}</span>`;
+   view.prepend(box);
+ }
+}
+function safeSection(name,fn){try{fn()}catch(err){reportSectionError(name,err)}}
 function render(){
- updatePositionFill();
- $("statusDate").textContent=`Day ${state.instructionalDay}/${state.maxInstructionalDays} • ${fmtDate(state.date)}`;
- $("statusEnrollment").textContent=`${enrollment()} students`;
+ try{updatePositionFill();}catch(err){console.error(err)}
+ const setText=(id,val)=>{const el=$(id);if(el)el.textContent=val};
+ setText("statusDate",`Day ${state.instructionalDay}/${state.maxInstructionalDays} • ${fmtDate(state.date)}`);
+ setText("statusEnrollment",`${enrollment()} students`);
  let present=activeEmployees().filter(e=>e.status!=="Absent"&&!e.leave).length;
- $("statusStaff").textContent=`${present}/${activeEmployees().length}`;
- $("statusAttendance").textContent=pct(state.metrics.attendance);
- $("statusBudget").textContent=money(availableOperating());
- $("statusBuilding").textContent=`${buildingScore()}%`;
- $("unreadBadge").textContent=state.inbox.filter(m=>!m.read).length||"";
- renderCommand();renderBuilding();renderStudents();renderStaff();renderHR();renderOperations();renderFinance();renderBoard();renderInbox();renderReports();
+ setText("statusStaff",`${present}/${activeEmployees().length}`);
+ setText("statusAttendance",pct(state.metrics.attendance));
+ setText("statusBudget",money(availableOperating()));
+ setText("statusBuilding",`${buildingScore()}%`);
+ setText("unreadBadge",state.inbox.filter(m=>!m.read).length||"");
+ safeSection('command',renderCommand);
+ safeSection('building',renderBuilding);
+ safeSection('students',renderStudents);
+ safeSection('staff',renderStaff);
+ safeSection('hr',renderHR);
+ safeSection('operations',renderOperations);
+ safeSection('finance',renderFinance);
+ safeSection('board',renderBoard);
+ safeSection('inbox',renderInbox);
+ safeSection('reports',renderReports);
 }
 function renderCommand(){
  $("briefingSub").textContent=`${state.weather.condition}, ${state.weather.temp}°F • Roads: ${state.weather.roads}`;
@@ -539,18 +559,34 @@ function load(){
  let legacy=localStorage.getItem(LEGACY_KEY);if(legacy){try{let old=JSON.parse(legacy);state=importLegacySave(old);toast("Previous Lincoln save imported into the realism build.");render();return;}catch(err){console.error(err);}}
  toast("No saved realism game found.");
 }
-function showView(v){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active-view"));document.querySelectorAll(".nav-btn").forEach(x=>x.classList.toggle("active",x.dataset.view===v));$("view-"+v).classList.add("active-view");}
-
-document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>showView(b.dataset.view));
-$("modalClose").onclick=closeModal;$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal();});
-$("saveBtn").onclick=()=>save(false);$("loadBtn").onclick=load;$("advanceDayBtn").onclick=advanceDay;$("runDayBtn").onclick=runSchoolDay;
-$("postVacancyQuick").onclick=postVacancyModal;$("postVacancyBtn").onclick=postVacancyModal;$("enrollStudentQuick").onclick=openEnrollFamily;$("enrollStudentBtn").onclick=openEnrollFamily;
-$("newWorkOrderQuick").onclick=()=>openWorkOrderModal();$("newWorkOrderBtn").onclick=()=>openWorkOrderModal();$("weatherDecisionQuick").onclick=weatherDecision;$("fieldTripQuick").onclick=fieldTrip;
-$("boardRequestQuick").onclick=addBoardIssue;$("newBoardIssueBtn").onclick=addBoardIssue;$("requestFteBtn").onclick=requestFTE;$("newPurchaseBtn").onclick=createPO;
-$("refreshAbsencesBtn").onclick=simulateCalloffs;$("addMeetingBtn").onclick=addMeeting;$("markAllReadBtn").onclick=()=>{state.inbox.forEach(m=>m.read=true);render();};$("systemCheckBtn").onclick=runSystemCheck;
-["studentGradeFilter","studentNeedFilter"].forEach(id=>$(id).onchange=renderStudents);$("studentSearch").oninput=renderStudents;["staffCategoryFilter","staffStatusFilter"].forEach(id=>$(id).onchange=renderStaff);$("staffSearch").oninput=renderStaff;
-["showCounts","showTemps","showCleaning","showOrders"].forEach(id=>$(id).onchange=e=>{state.settings[id]=e.target.checked;renderBuilding();});
-document.querySelectorAll("[data-room-filter]").forEach(cb=>cb.onchange=()=>{document.querySelectorAll(`.room-map.${cb.dataset.roomFilter}`).forEach(x=>x.style.display=cb.checked?"":"none");});
-
-simulateCalloffs();
-render();
+function showView(v){
+ document.querySelectorAll(".view").forEach(x=>x.classList.remove("active-view"));
+ document.querySelectorAll(".nav-btn").forEach(x=>x.classList.toggle("active",x.dataset.view===v));
+ const target=$("view-"+v);if(target)target.classList.add("active-view");
+ if(v==='building')safeSection('building',renderBuilding);
+}
+function bindUI(){
+ document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
+ if($("modalClose"))$("modalClose").onclick=closeModal;
+ if($("modal"))$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal();});
+ const bind=(id,fn)=>{const el=$(id);if(el)el.addEventListener('click',fn)};
+ bind("saveBtn",()=>save(false));bind("loadBtn",load);bind("advanceDayBtn",advanceDay);bind("runDayBtn",runSchoolDay);
+ bind("postVacancyQuick",postVacancyModal);bind("postVacancyBtn",postVacancyModal);bind("enrollStudentQuick",openEnrollFamily);bind("enrollStudentBtn",openEnrollFamily);
+ bind("newWorkOrderQuick",()=>openWorkOrderModal());bind("newWorkOrderBtn",()=>openWorkOrderModal());bind("weatherDecisionQuick",weatherDecision);bind("fieldTripQuick",fieldTrip);
+ bind("boardRequestQuick",addBoardIssue);bind("newBoardIssueBtn",addBoardIssue);bind("requestFteBtn",requestFTE);bind("newPurchaseBtn",createPO);
+ bind("refreshAbsencesBtn",simulateCalloffs);bind("addMeetingBtn",addMeeting);bind("markAllReadBtn",()=>{state.inbox.forEach(m=>m.read=true);render();});bind("systemCheckBtn",runSystemCheck);
+ ["studentGradeFilter","studentNeedFilter"].forEach(id=>{if($(id))$(id).onchange=renderStudents});if($("studentSearch"))$("studentSearch").oninput=renderStudents;
+ ["staffCategoryFilter","staffStatusFilter"].forEach(id=>{if($(id))$(id).onchange=renderStaff});if($("staffSearch"))$("staffSearch").oninput=renderStaff;
+ ["showCounts","showTemps","showCleaning","showOrders"].forEach(id=>{if($(id))$(id).onchange=e=>{state.settings[id]=e.target.checked;renderBuilding();}});
+ document.querySelectorAll("[data-room-filter]").forEach(cb=>cb.onchange=()=>{document.querySelectorAll(`.room-map.${cb.dataset.roomFilter}`).forEach(x=>x.style.display=cb.checked?"":"none");});
+}
+function startupFailure(err){
+ console.error('Lincoln startup failed',err);
+ const app=document.getElementById('app');if(!app)return;
+ const box=document.createElement('div');box.className='startup-error';box.innerHTML=`<strong>Lincoln recovered from a startup problem.</strong><br>${String(err?.message||err)}<br><small>Tabs remain available; use Reports → System Check if a section still has an issue.</small>`;app.prepend(box);
+}
+function initApp(){
+ try{bindUI();render();}catch(err){startupFailure(err);try{bindUI()}catch{}}
+}
+window.addEventListener('error',e=>startupFailure(e.error||e.message));
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();
