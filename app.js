@@ -1,9 +1,10 @@
-const GAME_VERSION="6.0";
-const GAME_BUILD="2026-09-02 13:08 ET";
+const GAME_VERSION="7.0";
+const GAME_BUILD="2026-09-02 13:28 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
-const SAVE_KEY="lincolnElementarySimulatorDistrictV6";
+const SAVE_KEY="lincolnElementarySimulatorPlayableV7";
+const V6_SAVE_KEY="lincolnElementarySimulatorDistrictV6";
 const V5_SAVE_KEY="lincolnElementarySimulatorLivingV5";
 const V3_SAVE_KEY="lincolnElementarySimulatorRealismV3";
 const LEGACY_KEY="lincolnElementarySimulatorSaveV2";
@@ -640,7 +641,7 @@ function advanceMinutes(amount=30){
  state.simMinutes=Math.min(1080,state.simMinutes+amount);generateLivingEvents(amount);render();
 }
 function nextScheduledEvent(){
- ensureV5State();let marks=[390,450,490,515,570,640,690,750,810,860,875,920,1020,1080];let next=marks.find(x=>x>state.simMinutes)||1080;state.simMinutes=next;generateLivingEvents(next-state.simMinutes);render();
+ ensureV5State();let marks=[390,450,490,515,570,640,690,750,810,860,875,920,1020,1080];let next=marks.find(x=>x>state.simMinutes)||1080;let delta=next-state.simMinutes;state.simMinutes=next;generateLivingEvents(delta);render();
 }
 function finishLivingDay(){
  ensureV5State();while(state.simMinutes<1080){state.simMinutes=Math.min(1080,state.simMinutes+60);generateLivingEvents(60);}liveEvent('Evening custodial operations completed. Building secured.');
@@ -866,6 +867,32 @@ bindUI=function(){
   bindUIBeforeV6();
   const ww=$("whoWhereSearch");if(ww)ww.addEventListener("input",renderWhoWhere);
 };
+
+
+
+
+/* ========================================================= V7 PLAYABLE SCHOOL ========================================================= */
+function ensureV7State(){ensureV6State();state.version=7;state.play=state.play||{running:false,speed:1,principalLoc:"OFFICE",principalBusyUntil:0};state.liveAlerts=state.liveAlerts||[];state.staffMessages=state.staffMessages||[];}
+function addLiveAlert(icon,title,body,priority="Today",loc=""){ensureV7State();state.liveAlerts.unshift({id:uid("alert"),time:state.simMinutes,icon,title,body,priority,loc,date:state.date});state.liveAlerts=state.liveAlerts.slice(0,40);toast(`${icon} ${title}`);}
+function playableEvent(){if(state.simMinutes<490||state.simMinutes>900||Math.random()>.23)return;let type=Math.floor(Math.random()*6);if(type===0){let r=pick(state.rooms.filter(x=>x.type==="Classroom"));if(r){r.temp=Math.min(84,(r.temp||72)+1);addLiveAlert("🌡️",`Warm room ${r.id}`,`${r.name} is ${r.temp}°F. The teacher has noticed the room warming up.`,"Today",r.id);}}else if(type===1){let s=pick(state.students);addLiveAlert("🩹","Nurse visit",`${s.first} ${s.last} was sent to the health office for a routine visit.`,"Info","HEALTH");}else if(type===2){let t=pick(activeEmployees().filter(e=>e.category==="Teacher"));if(t){state.staffMessages.unshift({id:uid("sm"),time:state.simMinutes,from:t.name,text:"Do you have a minute when you're free? I wanted to talk about something in my classroom.",loc:t.room||"OFFICE"});addLiveAlert("💬",`${t.name} wants to talk`,`A teacher has asked to speak with you when you are free.`,"Today",t.room||"OFFICE");}}else if(type===3){addLiveAlert("📞","Parent call waiting","The office has a parent asking to speak with administration about a classroom concern.","Today","OFFICE");}else if(type===4){addLiveAlert("🧹","Custodian responding","A spill was reported in the main hall. The head custodian is handling it automatically.","Info","HALL");}else{addLiveAlert("🚌","Transportation update","An afternoon route is expected to arrive about 8 minutes late.","Today","ENTRY");}}
+function playableTick(minutes=5){ensureV7State();advanceMinutes(minutes);playableEvent();renderPlayControls();}
+let playTimer=null;function startPlayLoop(){if(playTimer)clearInterval(playTimer);playTimer=setInterval(()=>{if(state&&state.play&&state.play.running)playableTick(5*state.play.speed);},1000);}
+function togglePlay(){ensureV7State();state.play.running=!state.play.running;renderPlayControls();}
+function cycleSpeed(){ensureV7State();state.play.speed=state.play.speed===1?2:state.play.speed===2?5:1;renderPlayControls();}
+function renderPlayControls(){let p=$("playPauseBtn"),s=$("speedBtn");if(p)p.textContent=state.play.running?"⏸ Pause":"▶ Play";if(s)s.textContent=`${state.play.speed}×`;}
+function currentPrincipalLocation(){return state.play.principalLoc||"OFFICE";}function principalCanAct(){return state.simMinutes>=(state.play.principalBusyUntil||0);}
+function v7LocationLabel(id){if(id==="HALL")return "Main Hall";return locationLabel(id);}
+function nearbyLocations(loc){const g={OFFICE:["ENTRY","HEALTH","HALL"],ENTRY:["OFFICE","HALL"],HEALTH:["OFFICE","HALL"],HALL:["OFFICE","ENTRY","CAF","GYM","LIB","101","104","110","201","204","207"],CAF:["HALL","KITCHEN"],KITCHEN:["CAF"],GYM:["HALL"],LIB:["HALL"],MUSIC:["HALL"],ART:["HALL"],"101":["HALL","102"],"102":["101","103"],"103":["102","HALL"],"104":["HALL","105"],"105":["104","106"],"106":["105","HALL"],"110":["HALL","111"],"111":["110","112"],"112":["111","HALL"],"201":["HALL","202"],"202":["201","203"],"203":["202","HALL"],"204":["HALL","205"],"205":["204","206"],"206":["205","HALL"],"207":["HALL","208"],"208":["207","209"],"209":["208","HALL"]};return g[loc]||["HALL"];}
+function movePrincipal(loc){if(!principalCanAct())return toast(`You are busy until ${mins12(state.play.principalBusyUntil)}.`);state.play.principalLoc=loc;state.play.principalBusyUntil=state.simMinutes+5;renderWalkMode();}
+function talkToPerson(kind,id){if(!principalCanAct())return toast(`You are busy until ${mins12(state.play.principalBusyUntil)}.`);state.play.principalBusyUntil=state.simMinutes+10;if(kind==="employee"){let e=state.employees.find(x=>x.id===id);if(e)addLiveAlert("💬",`Talked with ${e.name}`,pick([`${e.name} says things are going smoothly.`,`${e.name} asks about an upcoming schedule change.`,`${e.name} mentions a student who may need more support.`,`${e.name} thanks you for checking in.`]),"Info",currentEmployeeLocation(e));}else{let s=state.students.find(x=>x.id===id);if(s)addLiveAlert("🙂",`Checked in with ${s.first}`,pick([`${s.first} tells you about a class project.`,`${s.first} says lunch was good today.`,`${s.first} is excited about specials.`,`${s.first} says the day is going well.`]),"Info",currentStudentLocation(s));}renderWalkMode();}
+function renderWalkMode(){ensureV7State();let modal=$("walkModal");if(!modal||modal.classList.contains("hidden"))return;let loc=currentPrincipalLocation();$("walkClock").textContent=`${mins12(state.simMinutes)} • ${schoolPhase()}`;$("walkLocation").innerHTML=`<div class="walk-location"><strong>📍 ${v7LocationLabel(loc)}</strong><span>${principalCanAct()?"Available":"Busy until "+mins12(state.play.principalBusyUntil)}</span></div>`;let es=activeEmployees().filter(e=>currentEmployeeLocation(e)===loc).slice(0,8),ss=state.students.filter(s=>currentStudentLocation(s)===loc).slice(0,8);$("walkPeople").innerHTML=`<h3>People Here</h3>`+(es.length||ss.length?[...es.map(e=>`<button class="person-chip" data-kind="employee" data-id="${e.id}">👩‍🏫 ${e.name}<small>${e.position}</small></button>`),...ss.map(s=>`<button class="person-chip" data-kind="student" data-id="${s.id}">🧒 ${s.first} ${s.last}<small>Grade ${s.grade}</small></button>`)].join(""):`<div class="muted">No one notable is here right now.</div>`);$("walkActions").innerHTML=`<h3>Go To</h3>`+nearbyLocations(loc).map(n=>`<button data-move="${n}">➡️ ${v7LocationLabel(n)}</button>`).join("");$("walkPeople").querySelectorAll("[data-kind]").forEach(b=>b.onclick=()=>talkToPerson(b.dataset.kind,b.dataset.id));$("walkActions").querySelectorAll("[data-move]").forEach(b=>b.onclick=()=>movePrincipal(b.dataset.move));}
+function openWalk(){ensureV7State();$("walkModal").classList.remove("hidden");renderWalkMode();}function closeWalk(){$("walkModal").classList.add("hidden");}
+function renderPhone(tab="alerts"){ensureV7State();let body=$("phoneBody");if(!body)return;if(tab==="alerts")body.innerHTML=state.liveAlerts.length?state.liveAlerts.slice(0,12).map(a=>`<div class="phone-item"><strong>${a.icon} ${a.title}</strong><span>${mins12(a.time)} • ${a.priority}</span><p>${a.body}</p></div>`).join(""):`<div class="muted">No live alerts yet.</div>`;else if(tab==="messages")body.innerHTML=state.staffMessages.length?state.staffMessages.slice(0,12).map(m=>`<div class="phone-item"><strong>${m.from}</strong><span>${mins12(m.time)}</span><p>${m.text}</p></div>`).join(""):`<div class="muted">No staff messages.</div>`;else body.innerHTML=(state.principalSchedule||[]).slice(0,10).map(i=>`<div class="phone-item"><strong>${i.time||""} ${i.title||i.activity||"Calendar item"}</strong><p>${i.location||""}</p></div>`).join("")||`<div class="muted">No calendar items.</div>`;}
+function openPhone(){$("phonePanel").classList.remove("hidden");renderPhone("alerts");}function closePhone(){$("phonePanel").classList.add("hidden");}
+
+const renderBeforeV7=render;render=function(){ensureV7State();renderBeforeV7();renderPlayControls();renderWalkMode();};
+const loadBeforeV7=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV7State();toast("V7 saved game loaded.");render();return;}catch(err){console.error(err)}}let v6=localStorage.getItem(V6_SAVE_KEY);if(v6){try{state=JSON.parse(v6);ensureV7State();state.schoolHistory.unshift({date:state.date,text:"Upgraded Lincoln from District Simulation V6.0 to Playable School V7.0."});toast("Your V6 game was upgraded to V7.0. Save now to create a V7 save.");render();return;}catch(err){console.error(err)}}return loadBeforeV7();};
+const bindUIBeforeV7=bindUI;bindUI=function(){bindUIBeforeV7();$("playPauseBtn")?.addEventListener("click",togglePlay);$("speedBtn")?.addEventListener("click",cycleSpeed);$("walkBtn")?.addEventListener("click",openWalk);$("walkCloseBtn")?.addEventListener("click",closeWalk);$("phoneBtn")?.addEventListener("click",openPhone);$("phoneCloseBtn")?.addEventListener("click",closePhone);document.querySelectorAll("[data-phone]").forEach(b=>b.addEventListener("click",()=>renderPhone(b.dataset.phone)));startPlayLoop();};
 
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();
