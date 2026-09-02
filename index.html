@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lincoln Elementary — Real School Simulator</title>
-<link rel="stylesheet" href="styles.css?v=3.2">
+<title>Lincoln Elementary — Living School Simulator V5</title>
+<link rel="stylesheet" href="styles.css?v=5.0">
 </head>
 <body>
 <div id="app">
 <header class="topbar">
-  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Real School Simulator • K–6</div><div id="versionBadge" class="version-badge">Version 3.2 • Build 2026-09-02 09:09 ET</div></div>
+  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Living School Simulator • K–6</div><div id="versionBadge" class="version-badge">Version 5.0 • Build 2026-09-02 09:32 ET</div></div>
   <nav class="nav-tabs" aria-label="Game sections">
     <button class="nav-btn active" data-view="command">🏠 Command</button>
     <button class="nav-btn" data-view="building">🗺️ Building</button>
@@ -31,6 +31,7 @@
 
 <section class="status-strip">
   <div><span>School Day</span><strong id="statusDate"></strong></div>
+  <div><span>Current Time</span><strong id="statusTime">6:00 AM</strong></div>
   <div><span>Enrollment</span><strong id="statusEnrollment"></strong></div>
   <div><span>Staff Present</span><strong id="statusStaff"></strong></div>
   <div><span>Attendance</span><strong id="statusAttendance"></strong></div>
@@ -49,6 +50,13 @@
       <section class="card padded">
         <div class="section-head"><div><h2>Today’s Schedule</h2><p class="muted">Your administrative calendar and building events.</p></div><button id="addMeetingBtn" class="secondary">Add Meeting</button></div>
         <div id="todaySchedule" class="timeline"></div>
+      </section>
+      <section class="card padded live-day-card">
+        <div class="section-head"><div><h2>Living School Day</h2><p class="muted">Advance the actual school day and watch rooms, office, nurse and staffing activity change.</p></div><div class="live-clock" id="liveClock">6:00 AM</div></div>
+        <div class="day-controls"><button id="advance30Btn" class="primary">+30 Minutes</button><button id="nextEventBtn" class="secondary">Next Scheduled Event</button><button id="finishDayBtn" class="secondary">Finish Day</button></div>
+        <div id="dayPhase" class="day-phase"></div>
+        <div id="liveDayKpis" class="stat-grid"></div>
+        <div class="living-grid"><div><h3>Live Activity</h3><div id="liveActivity" class="compact-list"></div></div><div><h3>Front Office / Nurse</h3><div id="liveQueues" class="compact-list"></div></div></div>
       </section>
       <section class="card padded"><h2>Attention Needed</h2><div id="attentionList" class="attention-list"></div></section>
     </div>
@@ -72,6 +80,7 @@
         <label><input type="checkbox" data-room-filter="facility" checked> Facilities</label>
       </div>
       <h3>Display</h3>
+      <label class="toggle-row"><input id="showTeachers" type="checkbox" checked> Teacher names</label>
       <label class="toggle-row"><input id="showCounts" type="checkbox" checked> Student counts</label>
       <label class="toggle-row"><input id="showTemps" type="checkbox"> Temperatures</label>
       <label class="toggle-row"><input id="showCleaning" type="checkbox"> Cleaning scores</label>
@@ -140,13 +149,18 @@
 
 <section id="view-inbox" class="view">
   <div class="inbox-layout">
-    <section class="card padded"><div class="section-head"><div><h2>Principal Inbox</h2><p class="muted">HR, parents, facilities, district office, student services and staff.</p></div><button id="markAllReadBtn" class="secondary">Mark All Read</button></div><div id="inboxList" class="inbox-list"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Principal Inbox</h2><p class="muted">HR, parents, facilities, district office, student services and staff.</p></div><div class="actions no-margin"><button id="composeEmailBtn" class="primary">Compose Email</button><button id="markAllReadBtn" class="secondary">Mark All Read</button></div></div><div id="inboxList" class="inbox-list"></div></section>
     <section class="card padded"><h2>Message</h2><div id="messageDetail" class="muted">Select a message.</div></section>
   </div>
 </section>
 
 <section id="view-reports" class="view">
   <section class="card padded"><div class="section-head"><div><h2>Administrative Reports</h2><p class="muted">Operational information is presented through reports instead of perfect knowledge.</p></div><button id="systemCheckBtn" class="secondary">Run System Check</button></div><div id="reportGrid" class="report-grid"></div></section>
+  <div class="reports-v5-grid">
+    <section class="card padded"><h2>School History</h2><p class="muted">Major decisions and milestones become part of Lincoln's permanent story.</p><div id="schoolHistoryBoard" class="compact-list"></div></section>
+    <section class="card padded"><h2>Community & PTO</h2><div id="communityBoard"></div></section>
+    <section class="card padded"><h2>Summer Readiness</h2><div id="summerReadiness"></div></section>
+  </div>
 </section>
 </main>
 
@@ -156,6 +170,6 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-card"><div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="icon-btn" aria-label="Close">✕</button></div><div id="modalBody" class="modal-body"></div></div>
 </div>
-<script src="app.js?v=3.2"></script>
+<script src="app.js?v=5.0"></script>
 </body>
 </html>

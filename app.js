@@ -1,9 +1,10 @@
-const GAME_VERSION="3.2";
-const GAME_BUILD="2026-09-02 09:09 ET";
+const GAME_VERSION="5.0";
+const GAME_BUILD="2026-09-02 09:32 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
-const SAVE_KEY="lincolnElementarySimulatorRealismV3";
+const SAVE_KEY="lincolnElementarySimulatorLivingV5";
+const V3_SAVE_KEY="lincolnElementarySimulatorRealismV3";
 const LEGACY_KEY="lincolnElementarySimulatorSaveV2";
 const $=id=>document.getElementById(id);
 const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
@@ -141,7 +142,7 @@ function initialState(){
   metrics:{parentSatisfaction:84,staffMorale:87,safety:94,academics:78,attendance:95.6,building:90,reputation:82},
   neighborhoods:[
    {name:"Oakwood",students:102,growth:1.2},{name:"River Bend",students:74,growth:.4},{name:"Lincoln Heights",students:138,growth:-.2},{name:"Willow Creek",students:38,growth:6.8},{name:"Rural North",students:62,growth:.5}
-  ],fiscalHistory:[],selectedRoom:null,selectedMessage:null,weather:{condition:"Clear",temp:72,roads:"Dry"},settings:{showCounts:true,showTemps:false,showCleaning:false,showOrders:true}
+  ],fiscalHistory:[],selectedRoom:null,selectedMessage:null,weather:{condition:"Clear",temp:72,roads:"Dry"},settings:{showTeachers:true,showCounts:true,showTemps:false,showCleaning:false,showOrders:true}
  };
  generateFamiliesAndStudents(state);
  seedInbox(state); seedSchedule(state); seedWorkOrders(state);
@@ -567,6 +568,151 @@ function showView(v){
  const target=$("view-"+v);if(target)target.classList.add("active-view");
  if(v==='building')safeSection('building',renderBuilding);
 }
+
+
+/* =========================================================
+   LINCOLN ELEMENTARY V5.0 — LIVING SCHOOL SYSTEMS
+   ========================================================= */
+function ensureV5State(){
+ state.settings=state.settings||{};
+ if(state.settings.showTeachers===undefined)state.settings.showTeachers=true;
+ state.simMinutes=Number.isFinite(state.simMinutes)?state.simMinutes:360;
+ state.dailyCounters=state.dailyCounters||{late:0,earlyDismissal:0,nurse:0,officeReferrals:0,visitors:0,parentCalls:0,lunches:0};
+ state.liveActivity=state.liveActivity||[];
+ state.officeQueue=state.officeQueue||[];
+ state.nurseLog=state.nurseLog||[];
+ state.disciplineLog=state.disciplineLog||[];
+ state.schoolHistory=state.schoolHistory||[
+  {date:'2026-08-13',text:'Lincoln Elementary opened the 2026–27 school year.'}
+ ];
+ state.pto=state.pto||{balance:12850,volunteers:34,events:[{name:'Back-to-School Night',date:'2026-08-27',status:'Planned'},{name:'Fall Family Night',date:'2026-10-08',status:'Planned'}]};
+ state.summerReadiness=state.summerReadiness||{classroomsReady:21,workOrdersRemaining:state.workOrders.filter(w=>w.status==='Open').length,devicesReady:94,positionsFilled:Math.round(activeEmployees().length/(activeEmployees().length+state.positions.filter(p=>p.filled<p.authorized).length)*100),transportationReady:92};
+ state.inbox=state.inbox||[];
+ state.inbox.forEach(m=>{
+   m.thread=m.thread||[{id:uid('mail'),sender:m.from,body:m.body,date:m.date||state.date,direction:'in'}];
+   m.subject=m.subject||'(No subject)';m.read=!!m.read;m.status=m.status||'Open';
+ });
+}
+function mins12(m){let h=Math.floor(m/60)%24,mm=m%60,ap=h>=12?'PM':'AM';let hh=h%12||12;return `${hh}:${String(mm).padStart(2,'0')} ${ap}`;}
+function schoolPhase(m=state.simMinutes){
+ if(m<390)return 'Early building operations';
+ if(m<450)return 'Staff arrival / breakfast preparation';
+ if(m<490)return 'Teacher arrival & morning preparation';
+ if(m<515)return 'Student arrival';
+ if(m<690)return 'Morning instruction';
+ if(m<810)return 'Lunch / recess / midday services';
+ if(m<875)return 'Afternoon instruction';
+ if(m<920)return 'Dismissal & family pickup';
+ if(m<1020)return 'After-school / teacher work time';
+ return 'Evening custodial operations';
+}
+function classroomActivity(room){
+ if(!room?.grade)return room?.name||'';
+ let m=state.simMinutes,g=room.grade;
+ if(m<450)return 'Room preparation';
+ if(m<490)return 'Teacher planning';
+ if(m<515)return 'Student arrival';
+ if(m<570)return g==='K'?'Morning meeting / literacy':'Morning meeting / ELA';
+ if(m<640)return 'ELA / literacy block';
+ if(m<690)return Number(g||0)%2===0?'Math':'Specials / planning';
+ if(m<750)return ['K','1','2'].includes(g)?'Lunch / recess':'Math / intervention';
+ if(m<810)return ['K','1','2'].includes(g)?'Math / centers':'Lunch / recess';
+ if(m<860)return 'Science / social studies';
+ if(m<875)return 'Pack-up / closing circle';
+ if(m<920)return 'Dismissal';
+ return 'Classroom closed';
+}
+function liveEvent(text,type='info'){state.liveActivity.unshift({time:mins12(state.simMinutes),text,type});state.liveActivity=state.liveActivity.slice(0,14);}
+function resetLivingDay(){state.simMinutes=360;state.dailyCounters={late:0,earlyDismissal:0,nurse:0,officeReferrals:0,visitors:0,parentCalls:0,lunches:0};state.liveActivity=[];state.officeQueue=[];state.nurseLog=[];state.disciplineLog=[];liveEvent('Head custodian opened the building.');}
+function generateLivingEvents(step=30){
+ let m=state.simMinutes,c=state.dailyCounters;
+ if(m>=450&&m<540&&Math.random()<.6){let n=rnd(1,4);c.late+=n;liveEvent(`${n} student${n>1?'s':''} checked in late at the front office.`,'office');}
+ if(m>=500&&m<900&&Math.random()<.55){let student=pick(state.students.filter(s=>s.status==='Active'));let reasons=['headache','stomach ache','minor playground scrape','scheduled medication','not feeling well'];let reason=pick(reasons);c.nurse++;state.nurseLog.unshift({time:mins12(m),student:`${student.first} ${student.last}`,reason});liveEvent(`${student.first} ${student.last} visited the nurse: ${reason}.`,'nurse');}
+ if(m>=520&&m<880&&Math.random()<.3){let student=pick(state.students.filter(s=>s.status==='Active'));let reason=pick(['classroom disruption','repeated redirection','peer conflict','unsafe hallway behavior']);c.officeReferrals++;state.disciplineLog.unshift({time:mins12(m),student:`${student.first} ${student.last}`,reason});state.officeQueue.unshift(`${student.first} ${student.last} — ${reason}`);liveEvent(`Office referral: ${student.first} ${student.last} — ${reason}.`,'office');}
+ if(m>=540&&m<900&&Math.random()<.28){c.parentCalls++;let fam=pick(state.families);state.officeQueue.unshift(`Parent call — ${fam.name}`);liveEvent(`Front office received a parent call from the ${fam.name}.`,'office');}
+ if(m>=650&&m<820){c.lunches=Math.max(c.lunches,Math.round(enrollment()*(.72+Math.random()*.12)));}
+ if(m>=700&&m<900&&Math.random()<.18){c.earlyDismissal++;let student=pick(state.students.filter(s=>s.status==='Active'));liveEvent(`${student.first} ${student.last} signed out for early dismissal.`,'office');}
+ if(Math.random()<.12){let room=pick(state.rooms.filter(r=>r.type==='classroom'));liveEvent(`${room.id}: ${pick(['teacher requested tech support','student support team checked in','principal walkthrough completed','small-group intervention underway'])}.`,'room');}
+}
+function advanceMinutes(amount=30){
+ ensureV5State();if(state.simMinutes>=1080)return toast('The school day is complete. Advance Day to begin the next date.');
+ state.simMinutes=Math.min(1080,state.simMinutes+amount);generateLivingEvents(amount);render();
+}
+function nextScheduledEvent(){
+ ensureV5State();let marks=[390,450,490,515,570,640,690,750,810,860,875,920,1020,1080];let next=marks.find(x=>x>state.simMinutes)||1080;state.simMinutes=next;generateLivingEvents(next-state.simMinutes);render();
+}
+function finishLivingDay(){
+ ensureV5State();while(state.simMinutes<1080){state.simMinutes=Math.min(1080,state.simMinutes+60);generateLivingEvents(60);}liveEvent('Evening custodial operations completed. Building secured.');
+ state.schoolHistory.unshift({date:state.date,text:`Completed instructional day ${state.instructionalDay}: ${state.dailyCounters.nurse} nurse visits, ${state.dailyCounters.officeReferrals} office referrals, ${state.absences.length} staff absences.`});render();
+}
+
+const renderV32=render;
+render=function(){ensureV5State();renderV32();safeSection('v5extras',renderV5Extras);};
+const renderCommandV32=renderCommand;
+renderCommand=function(){ensureV5State();renderCommandV32();renderLivingDay();};
+function renderLivingDay(){
+ const t=$('statusTime');if(t)t.textContent=mins12(state.simMinutes);
+ if($('liveClock'))$('liveClock').textContent=mins12(state.simMinutes);
+ if($('dayPhase'))$('dayPhase').innerHTML=`<strong>${schoolPhase()}</strong><span> • ${fmtDate(state.date)}</span>`;
+ if($('liveDayKpis'))$('liveDayKpis').innerHTML=[['Late arrivals',state.dailyCounters.late],['Nurse visits',state.dailyCounters.nurse],['Office referrals',state.dailyCounters.officeReferrals],['Early dismissals',state.dailyCounters.earlyDismissal]].map(x=>`<div class="stat-box"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('');
+ if($('liveActivity'))$('liveActivity').innerHTML=(state.liveActivity.length?state.liveActivity:[{time:mins12(state.simMinutes),text:'No live events yet.'}]).map(x=>`<div class="live-event"><strong>${x.time}</strong><span>${x.text}</span></div>`).join('');
+ if($('liveQueues'))$('liveQueues').innerHTML=`<div class="compact-item"><strong>Front Office Queue:</strong> ${state.officeQueue.length}</div><div class="compact-item"><strong>Nurse Log:</strong> ${state.nurseLog.length} visit(s)</div><div class="compact-item"><strong>Parent Calls:</strong> ${state.dailyCounters.parentCalls}</div><div class="compact-item"><strong>Lunch Count:</strong> ${state.dailyCounters.lunches||'Pending'}</div>`;
+}
+
+renderBuilding=function(){
+ ensureV5State();const map=$('schoolMap');if(!map)return;map.innerHTML='';
+ for(const [id,name,type,col,row,w,h] of ROOM_LAYOUT){
+  let b=document.createElement(type==='circulation'?'div':'button');b.className=`room-map ${type}`;b.style.gridColumn=`${col}/span ${w}`;b.style.gridRow=`${row}/span ${h}`;
+  if(type==='circulation'){b.innerHTML=`<span class="rname">${name}</span>`;map.appendChild(b);continue;}
+  const r=roomById(id);if(!r)continue;let sev=roomSeverity(r);if(sev)b.classList.add(sev);
+  let count=r.grade?studentsInRoom(id).length:null,t=r.grade?teacherForRoom(id):null,meta=[];
+  if(r.grade&&state.settings.showTeachers)meta.push(t?t.name:'VACANT');
+  if(r.grade&&state.settings.showCounts)meta.push(`${count}/${r.capacity} students`);
+  if(state.settings.showTemps)meta.push(`${r.temp}°F`);if(state.settings.showCleaning)meta.push(`Clean ${r.cleanliness}%`);
+  let openW=r.workOrders.filter(x=>state.workOrders.find(w=>w.id===x&&w.status==='Open')).length;
+  let activity=r.grade?classroomActivity(r):name;
+  b.innerHTML=`<span class="rid">${id}</span><span class="rname">${r.grade?`Grade ${r.grade}`:name}</span>${r.grade?`<span class="teacher-map ${t?'':'teacher-vacant'}">${state.settings.showTeachers?(t?t.name:'VACANT'):'&nbsp;'}</span>`:''}<span class="activity-map">${activity}</span><span class="rmeta">${meta.filter(x=>!state.settings.showTeachers||x!==(t?t.name:'VACANT')).join(' • ')}</span>${state.settings.showOrders&&openW?`<span class="work-badge">🔧 ${openW}</span>`:''}`;
+  b.addEventListener('click',()=>{state.selectedRoom=id;renderBuilding();});map.appendChild(b);
+ }
+ if($('capacityChip'))$('capacityChip').textContent=`${mins12(state.simMinutes)} • Enrollment ${enrollment()} / 480 • ${Math.round(enrollment()/480*100)}% utilized`;renderRoomInspector();
+};
+
+renderInbox=function(){
+ ensureV5State();let list=state.inbox.slice().sort((a,b)=>(a.read===b.read?0:a.read?1:-1));
+ if($('inboxList'))$('inboxList').innerHTML=list.map(m=>`<div class="message-row ${m.read?'':'unread'}" data-msg="${m.id}"><div class="message-head"><span><i class="priority-dot ${m.priority}"></i><strong>${m.from}</strong></span><span class="muted">${m.read?'Read':'New'}</span></div><div class="subject">${m.subject}</div><div class="muted">${(m.thread?.at(-1)?.body||m.body).slice(0,95)}${(m.thread?.at(-1)?.body||m.body).length>95?'…':''}</div><div class="thread-count">${m.thread?.length||1} message${(m.thread?.length||1)===1?'':'s'}</div></div>`).join('');
+ document.querySelectorAll('[data-msg]').forEach(b=>b.onclick=()=>{state.selectedMessage=b.dataset.msg;let m=state.inbox.find(x=>x.id===state.selectedMessage);if(m)m.read=true;renderInbox();});
+ let m=state.inbox.find(x=>x.id===state.selectedMessage);
+ if($('messageDetail'))$('messageDetail').innerHTML=m?`<div class="email-thread"><div class="email-thread-head"><h3>${m.subject}</h3><span class="badge ${m.status==='Completed'?'good':'info'}">${m.status}</span></div>${m.thread.map(t=>`<div class="email-bubble ${t.direction==='out'?'sent':'received'}"><div class="email-meta"><strong>${t.direction==='out'?'You — Principal':t.sender}</strong><span>${t.time||t.date||''}</span></div><div>${String(t.body).replace(/\n/g,'<br>')}</div></div>`).join('')}</div><div class="actions"><button class="primary" data-msgact="Reply">Reply</button>${(m.actions||[]).filter(a=>a!=='Reply').map(a=>`<button class="secondary" data-msgact="${a}">${a}</button>`).join('')}<button class="secondary" data-msgact="Archive">Archive</button></div>`:"<span class='muted'>Select a message.</span>";
+ document.querySelectorAll('[data-msgact]').forEach(b=>b.onclick=()=>handleMessageAction(b.dataset.msgact));if($('unreadBadge'))$('unreadBadge').textContent=state.inbox.filter(x=>!x.read).length||'';
+};
+function openReplyComposer(m){
+ openModal(`Reply — ${m.subject}`,`<div class="email-compose"><div class="compose-to"><strong>To:</strong> ${m.from}</div><div class="compose-to"><strong>Subject:</strong> Re: ${m.subject}</div><textarea id="emailReplyBody" rows="8" placeholder="Type your response..."></textarea><div class="compose-helper">Your reply will remain permanently attached to this conversation thread.</div><div class="actions"><button id="sendReplyBtn" class="primary">Send Reply</button><button id="cancelReplyBtn" class="secondary">Cancel</button></div></div>`);
+ $('sendReplyBtn').onclick=()=>{let body=$('emailReplyBody').value.trim();if(!body)return toast('Type a reply before sending.');m.thread.push({id:uid('mail'),sender:'Principal',body,date:state.date,time:mins12(state.simMinutes),direction:'out'});m.status='Replied';log(`Replied to ${m.from}: ${m.subject}.`);closeModal();toast('Email reply sent and saved to the thread.');render();};$('cancelReplyBtn').onclick=closeModal;
+}
+function composeEmail(){
+ openModal('Compose Email',`<form id="composeForm"><div class="form-grid"><label>To<select id="composeTo"><option>Superintendent Office</option><option>HR</option><option>Facilities</option><option>Technology</option><option>School Board Office</option><option>Transportation</option><option>All Staff</option></select></label><label>Priority<select id="composePriority"><option value="low">Normal</option><option value="medium">Important</option><option value="high">Urgent</option></select></label><label class="full">Subject<input id="composeSubject" required></label><label class="full">Message<textarea id="composeBody" rows="7" required></textarea></label></div><div class="actions"><button class="primary">Send Email</button></div></form>`);$('composeForm').onsubmit=e=>{e.preventDefault();let to=$('composeTo').value,sub=$('composeSubject').value.trim(),body=$('composeBody').value.trim();let m=msg(to,sub,body,$('composePriority').value,[]);m.read=true;m.status='Sent';m.thread=[{id:uid('mail'),sender:'Principal',body,date:state.date,time:mins12(state.simMinutes),direction:'out'}];state.inbox.unshift(m);state.selectedMessage=m.id;log(`Sent email to ${to}: ${sub}.`);closeModal();render();};
+}
+handleMessageAction=function(act){let m=state.inbox.find(x=>x.id===state.selectedMessage);if(!m)return;if(act==='Reply')return openReplyComposer(m);if(act==='Archive'){m.status='Archived';state.inbox=state.inbox.filter(x=>x.id!==m.id);state.selectedMessage=null;}else{m.status='Completed';if(act==='Begin Onboarding'){let a=state.applications.find(x=>x.status==='Offer Accepted'&&(m.subject.includes(x.name)||m.body.includes(x.name)));if(a){a.status='Onboarding';a.onboardingDays=0;}}log(`Inbox action completed: ${act} — ${m.subject}.`);if(act.includes('HR'))showView('hr');if(act.includes('Operations'))showView('operations');if(act.includes('Reports'))showView('reports');if(act==='Create PO')createPO();if(act==='Create Work Order')openWorkOrderModal();}render();};
+
+function renderV5Extras(){
+ if($('schoolHistoryBoard'))$('schoolHistoryBoard').innerHTML=(state.schoolHistory.length?state.schoolHistory:[{date:state.date,text:'No history yet.'}]).slice(0,12).map(h=>`<div class="history-item"><strong>${h.date}</strong><span>${h.text}</span></div>`).join('');
+ if($('communityBoard'))$('communityBoard').innerHTML=`<div class="stat-grid two"><div class="stat-box"><span>PTO Balance</span><strong>${money(state.pto.balance)}</strong></div><div class="stat-box"><span>Approved Volunteers</span><strong>${state.pto.volunteers}</strong></div></div>${state.pto.events.map(e=>`<div class="position-row"><span><strong>${e.name}</strong><br><span class="muted">${e.date}</span></span><span class="badge info">${e.status}</span></div>`).join('')}`;
+ state.summerReadiness.workOrdersRemaining=state.workOrders.filter(w=>w.status==='Open').length;state.summerReadiness.positionsFilled=Math.round(activeEmployees().length/(activeEmployees().length+Math.max(1,state.positions.filter(p=>p.filled<p.authorized).length))*100);
+ if($('summerReadiness'))$('summerReadiness').innerHTML=Object.entries({'Classrooms Ready':`${state.summerReadiness.classroomsReady}/21`,'Positions Filled':`${state.summerReadiness.positionsFilled}%`,'Devices Ready':`${state.summerReadiness.devicesReady}%`,'Transportation Ready':`${state.summerReadiness.transportationReady}%`,'Open Work Orders':state.summerReadiness.workOrdersRemaining}).map(([k,v])=>`<div class="readiness-row"><span>${k}</span><strong>${v}</strong></div>`).join('');
+}
+
+const advanceDayV32=advanceDay;
+advanceDay=function(){ensureV5State();let prior=state.instructionalDay;advanceDayV32();resetLivingDay();state.schoolHistory.unshift({date:state.date,text:`Opened instructional day ${state.instructionalDay}; prior day ${prior} closed.`});render();};
+const runSchoolDayV32=runSchoolDay;
+runSchoolDay=function(){ensureV5State();runSchoolDayV32();finishLivingDay();};
+
+const loadV32=load;
+load=function(){
+ let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV5State();toast('V5 saved game loaded.');render();return;}catch(err){console.error(err)}}
+ let v3=localStorage.getItem(V3_SAVE_KEY);if(v3){try{state=JSON.parse(v3);ensureV5State();state.schoolHistory.unshift({date:state.date,text:'Upgraded existing Lincoln save to Living School V5.0.'});toast('Your V3.2 game was upgraded to V5.0. Save now to create a V5 save.');render();return;}catch(err){console.error(err)}}
+ return loadV32();
+};
+
 function bindUI(){
  document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener('click',()=>showView(b.dataset.view)));
  if($("modalClose"))$("modalClose").onclick=closeModal;
@@ -577,9 +723,10 @@ function bindUI(){
  bind("newWorkOrderQuick",()=>openWorkOrderModal());bind("newWorkOrderBtn",()=>openWorkOrderModal());bind("weatherDecisionQuick",weatherDecision);bind("fieldTripQuick",fieldTrip);
  bind("boardRequestQuick",addBoardIssue);bind("newBoardIssueBtn",addBoardIssue);bind("requestFteBtn",requestFTE);bind("newPurchaseBtn",createPO);
  bind("refreshAbsencesBtn",simulateCalloffs);bind("addMeetingBtn",addMeeting);bind("markAllReadBtn",()=>{state.inbox.forEach(m=>m.read=true);render();});bind("systemCheckBtn",runSystemCheck);
+ bind("advance30Btn",()=>advanceMinutes(30));bind("nextEventBtn",nextScheduledEvent);bind("finishDayBtn",finishLivingDay);bind("composeEmailBtn",composeEmail);
  ["studentGradeFilter","studentNeedFilter"].forEach(id=>{if($(id))$(id).onchange=renderStudents});if($("studentSearch"))$("studentSearch").oninput=renderStudents;
  ["staffCategoryFilter","staffStatusFilter"].forEach(id=>{if($(id))$(id).onchange=renderStaff});if($("staffSearch"))$("staffSearch").oninput=renderStaff;
- ["showCounts","showTemps","showCleaning","showOrders"].forEach(id=>{if($(id))$(id).onchange=e=>{state.settings[id]=e.target.checked;renderBuilding();}});
+ ["showTeachers","showCounts","showTemps","showCleaning","showOrders"].forEach(id=>{if($(id))$(id).onchange=e=>{state.settings[id]=e.target.checked;renderBuilding();}});
  document.querySelectorAll("[data-room-filter]").forEach(cb=>cb.onchange=()=>{document.querySelectorAll(`.room-map.${cb.dataset.roomFilter}`).forEach(x=>x.style.display=cb.checked?"":"none");});
 }
 function startupFailure(err){
