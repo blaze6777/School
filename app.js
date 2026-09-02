@@ -1,3 +1,5 @@
+const GAME_VERSION="3.2";
+const GAME_BUILD="2026-09-02 09:09 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
@@ -469,9 +471,9 @@ function maybeMidyearEnrollment(){if(Math.random()<.12){let g=pick(GRADES),ln=pi
 
 function openWorkOrderModal(roomId=null){
  openModal("Create Work Order",`<form id="woForm"><div class="form-grid"><label>Room<select id="woRoom">${state.rooms.map(r=>`<option value="${r.id}" ${r.id===roomId?"selected":""}>${r.id} — ${r.name}</option>`).join("")}</select></label><label>Priority<select id="woPriority"><option>Low</option><option selected>Medium</option><option>High</option></select></label><label class="full">Issue<textarea id="woIssue" rows="3" required placeholder="Describe the problem..."></textarea></label></div><div class="actions"><button class="primary">Submit Work Order</button></div></form>`);
- $("woForm").onsubmit=e=>{e.preventDefault();let w=workOrder($("woRoom").value,$("woIssue").value.trim(),$("woPriority").value);state.workOrders.push(w);roomById(w.roomId)?.workOrders.push(w.id);log(`Work order opened for ${w.roomId}: ${w.issue}`);closeModal();render();};
+ $("woForm").onsubmit=e=>{e.preventDefault();let w=workOrder($("woRoom").value,$("woIssue").value.trim(),$("woPriority").value,state.date);state.workOrders.push(w);roomById(w.roomId)?.workOrders.push(w.id);log(`Work order opened for ${w.roomId}: ${w.issue}`);closeModal();render();};
 }
-function simulateRandomWorkOrder(){let r=pick(state.rooms),issues=["HVAC not maintaining setpoint","Ceiling tile stained after rain","Interactive display not powering on","Door hardware loose","Sink/faucet leaking","Flooring transition lifting","Outlet not working","Light fixture out"];let w=workOrder(r.id,pick(issues),Math.random()<.12?"High":Math.random()<.5?"Medium":"Low");state.workOrders.push(w);r.workOrders.push(w.id);state.inbox.unshift(msg("Facilities",`${w.priority}-priority work order — ${r.id}`,w.issue,w.priority==="High"?"high":"medium",["Open Operations"]));}
+function simulateRandomWorkOrder(){let r=pick(state.rooms),issues=["HVAC not maintaining setpoint","Ceiling tile stained after rain","Interactive display not powering on","Door hardware loose","Sink/faucet leaking","Flooring transition lifting","Outlet not working","Light fixture out"];let w=workOrder(r.id,pick(issues),Math.random()<.12?"High":Math.random()<.5?"Medium":"Low",state.date);state.workOrders.push(w);r.workOrders.push(w.id);state.inbox.unshift(msg("Facilities",`${w.priority}-priority work order — ${r.id}`,w.issue,w.priority==="High"?"high":"medium",["Open Operations"]));}
 function progressWorkOrders(){state.workOrders.forEach(w=>{if(w.status==="Open"){w.age++;if(w.priority==="Low"&&Math.random()<.28||w.priority==="Medium"&&Math.random()<.18){w.status="Completed";let r=roomById(w.roomId);if(r){r.condition=clamp(r.condition+rnd(1,4),0,100);r.cleanliness=clamp(r.cleanliness+rnd(0,3),0,100);}}}});}
 function manageWO(id,act){let w=state.workOrders.find(x=>x.id===id);if(!w)return;if(act==="complete"){w.status="Completed";let r=roomById(w.roomId);if(r){r.condition=clamp(r.condition+5,0,100);r.cleanliness=clamp(r.cleanliness+4,0,100);}log(`Work order completed: ${w.issue}.`);}if(act==="escalate"){w.priority="High";w.assigned="District Maintenance";}render();}
 
@@ -586,7 +588,11 @@ function startupFailure(err){
  const box=document.createElement('div');box.className='startup-error';box.innerHTML=`<strong>Lincoln recovered from a startup problem.</strong><br>${String(err?.message||err)}<br><small>Tabs remain available; use Reports → System Check if a section still has an issue.</small>`;app.prepend(box);
 }
 function initApp(){
- try{bindUI();render();}catch(err){startupFailure(err);try{bindUI()}catch{}}
+ try{
+   const vb=document.getElementById("versionBadge");
+   if(vb)vb.textContent=`Version ${GAME_VERSION} • Build ${GAME_BUILD}`;
+   bindUI();render();
+ }catch(err){startupFailure(err);try{bindUI()}catch{}}
 }
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();

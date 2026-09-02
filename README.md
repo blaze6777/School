@@ -1,3 +1,7 @@
+# Lincoln Elementary Realism V3.2
+
+Startup crash fixed and visible version/build badge added.
+
 # Lincoln Elementary — Real School Simulator V3
 
 A realism-first K–6 school administration simulator designed for static hosting on GitHub Pages.
