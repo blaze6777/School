@@ -1,54 +1,26 @@
-# Lincoln Elementary School Simulator
+# Lincoln Elementary — Real School Simulator V3
 
-A GitHub Pages-ready K–6 school management simulator built with plain HTML, CSS, and JavaScript.
+A realism-first K–6 school administration simulator designed for static hosting on GitHub Pages.
 
-## Included systems
+## Core systems in this build
+- Day-by-day school calendar and principal briefing
+- Interactive architectural-style school floor plan with 21 permanent K–6 classrooms
+- Room capacity, condition, cleanliness, temperature, equipment and work orders
+- Persistent students grouped into families/households
+- Midyear enrollment, classroom balancing, IEP/504/ELL and attendance indicators
+- Staff directory with FTE, schedules, salary, contract, licensure, performance and personnel history
+- Position control / authorized FTE
+- Real vacancy workflow: post, applications, interviews, references, offers, onboarding and hiring
+- Substitute pool, daily call-offs and coverage
+- Leave management and transfers
+- Student-services workload
+- Principal inbox and administrative calendar
+- Purchase orders, payroll, benefits, operating budget and five-year enrollment outlook
+- Board agenda / approval system
+- Reports and built-in system check
+- Browser save/load with a basic legacy-save import for year and budget
 
-- Clickable K–6 school floor plan
-- Three permanent classrooms per grade, even when a room is vacant
-- Student census cohorts that move up one grade every school year
-- Sixth graders exit to middle school and a new kindergarten census enters
-- Individual generated students and classroom rosters
-- IEP / 504 indicators and attendance rates
-- Teacher age and years of experience
-- Teacher degrees and licensure
-- Teacher probationary/professional contracts
-- Teacher salary schedule with BA, MA, and MA+30 lanes and experience steps
-- District-wide salary increase proposals
-- Principal and assistant principal staffing
-- Office and student-services staff
-- Special education teachers and paras
-- Instructional assistants
-- Library, PE, music, and art teachers
-- Custodial staff
-- Cafeteria staff
-- Technology staff
-- Staff evaluations
-- Staff transfers and room reassignments
-- Maternity/paternity, FMLA, medical, military, and long-term leave
-- Employee resignations and retirements
-- Career history for employees
-- School board agenda, votes, support level, and financial decisions
-- Operating budget and payroll by employee category
-- Save/load game progress in browser localStorage
-- Automatic save when advancing the school year
+## GitHub Pages
+Upload `index.html`, `styles.css`, and `app.js` to the root of the repository. In GitHub: Settings → Pages → Deploy from a branch → `main` → `/ (root)`.
 
-## Run locally
-
-Open `index.html` directly, or use VS Code + Live Server.
-
-## Publish with GitHub Pages
-
-1. Create a GitHub repository.
-2. Upload `index.html`, `styles.css`, and `app.js` to the repository root.
-3. Commit the files.
-4. Go to **Settings → Pages**.
-5. Under **Build and deployment**, choose **Deploy from a branch**.
-6. Select `main` and `/ (root)`.
-7. Save.
-
-The simulator uses no external libraries or server. Saved games are stored in the browser that is playing the game.
-
-## Important save note
-
-Because this version uses browser `localStorage`, progress stays on the same browser/device. Clearing browser site data will erase the local save. A future version could add downloadable save files or a cloud/database login.
+After updating a live GitHub Pages site, use Ctrl+F5 if the old version is cached.

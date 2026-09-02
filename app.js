@@ -1,313 +1,556 @@
-const GRADES = ["K","1","2","3","4","5","6"];
-const TARGETS = {K:20,1:22,2:22,3:24,4:24,5:26,6:26};
-const SAVE_KEY = "lincolnElementarySimulatorSaveV2";
 
-const salarySchedule = {
-  BA: [48000,49500,51000,52500,54000,55500,57000,58500,60000,61500,63000,64500,66000,67500,69000,70500,72000,73500,75000,76500,78000,79500,81000,82500,84000,85500,87000,88500,90000,91500,93000],
-  MA: [51500,53000,54500,56000,57500,59000,60500,62000,63500,65000,66500,68000,69500,71000,72500,74000,75500,77000,78500,80000,81500,83000,84500,86000,87500,89000,90500,92000,93500,95000,96500],
-  MA30:[54500,56000,57500,59000,60500,62000,63500,65000,66500,68000,69500,71000,72500,74000,75500,77000,78500,80000,81500,83000,84500,86000,87500,89000,90500,92000,93500,95000,96500,98000,99500]
+const GRADES=["K","1","2","3","4","5","6"];
+const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
+const SAVE_KEY="lincolnElementarySimulatorRealismV3";
+const LEGACY_KEY="lincolnElementarySimulatorSaveV2";
+const $=id=>document.getElementById(id);
+const rnd=(a,b)=>Math.floor(Math.random()*(b-a+1))+a;
+const pick=a=>a[rnd(0,a.length-1)];
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const money=n=>"$"+Math.round(Number(n||0)).toLocaleString();
+const pct=n=>`${Math.round(n)}%`;
+const iso=d=>d.toISOString().slice(0,10);
+const fmtDate=s=>new Date(`${s}T12:00:00`).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"});
+const firstNames=["Ava","Liam","Olivia","Noah","Emma","Elijah","Sophia","James","Isabella","Lucas","Mia","Henry","Amelia","Benjamin","Harper","Theodore","Evelyn","Mateo","Charlotte","Jack","Luna","Levi","Sofia","Alexander","Camila","Daniel","Aria","Michael","Scarlett","Mason","Ella","Ethan","Avery","Logan","Mila","Owen","Gianna","Samuel","Layla","Sebastian","Nora","Aiden","Hazel","John","Lily","Joseph","Ellie","Wyatt","Violet","David","Claire","Grace","Caleb","Isaac","Lucy","Chloe","Julian","Nolan","Sadie","Ruby"];
+const lastNames=["Smith","Johnson","Brown","Taylor","Anderson","Thomas","Jackson","White","Harris","Martin","Thompson","Garcia","Martinez","Robinson","Clark","Rodriguez","Lewis","Lee","Walker","Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson","Carter","Mitchell","Perez","Roberts","Turner","Campbell","Parker","Evans","Edwards","Collins","Stewart"];
+const staffNames=["Alicia Carter","Miguel Lopez","Rachel Bennett","Dana Adams","Chris Thompson","Jenna Wilson","Marcus Reed","Tara Collins","Steven Harris","Natalie Morgan","Paula Taylor","Eric Evans","Monica Parker","Aaron Lewis","Jordan Miller","Casey Grant","Morgan Price","Taylor Bryant","Riley Ward","Cameron Brooks","Andrea Flores","Brandon Young","Heather King","Megan Rivera","Kyle Foster","Emily Chen"];
+const salaryLanes={
+ BA:[48000,49750,51500,53250,55000,56750,58500,60250,62000,63750,65500,67250,69000,70750,72500,74250,76000,77750,79500,81250,83000,84750,86500,88250,90000,91750,93500,95250,97000,98750,100500],
+ MA:[51500,53250,55000,56750,58500,60250,62000,63750,65500,67250,69000,70750,72500,74250,76000,77750,79500,81250,83000,84750,86500,88250,90000,91750,93500,95250,97000,98750,100500,102250,104000],
+ MA30:[54500,56250,58000,59750,61500,63250,65000,66750,68500,70250,72000,73750,75500,77250,79000,80750,82500,84250,86000,87750,89500,91250,93000,94750,96500,98250,100000,101750,103500,105250,107000]
+};
+function teacherSalary(degree,exp){let lane=degree==="MA+30"?"MA30":degree==="MA"?"MA":"BA";return salaryLanes[lane][Math.min(exp,30)];}
+function uid(prefix){return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2,7)}`;}
+
+const ROOM_LAYOUT=[
+["101","K-1","classroom",1,1,1,1],["102","K-2","classroom",2,1,1,1],
+["MUSIC","Music","special",4,1,1,1],["ART","Art","special",5,1,1,1],
+["201","4-1","classroom",7,1,1,1],["202","4-2","classroom",8,1,1,1],
+["103","K-3","classroom",1,2,1,1],["104","1-1","classroom",2,2,1,1],
+["CAF","Cafeteria","facility",4,2,2,2],["203","4-3","classroom",7,2,1,1],["204","5-1","classroom",8,2,1,1],
+["105","1-2","classroom",1,3,1,1],["106","1-3","classroom",2,3,1,1],
+["205","5-2","classroom",7,3,1,1],["206","5-3","classroom",8,3,1,1],
+["HALL1","Primary Hall","circulation",3,1,1,4],["HALL2","Upper Hall","circulation",6,1,1,4],
+["LIB","Media Center","special",3,5,2,2],["GYM","Gymnasium","special",5,5,2,2],
+["107","2-1","classroom",1,5,1,1],["108","2-2","classroom",2,5,1,1],
+["207","6-1","classroom",7,5,1,1],["208","6-2","classroom",8,5,1,1],
+["109","2-3","classroom",1,6,1,1],["110","3-1","classroom",2,6,1,1],
+["209","6-3","classroom",7,6,1,1],["SPED","Special Education","support",8,6,1,1],
+["111","3-2","classroom",1,7,1,1],["112","3-3","classroom",2,7,1,1],
+["OFFICE","Main Office","admin",4,7,1,1],["NURSE","Health Office","support",5,7,1,1],
+["COUNSEL","Counseling","support",6,7,1,1],["TECH","Technology","support",7,7,1,1],["CUST","Custodial","facility",8,7,1,1],
+["ENTRY","Main Entrance","circulation",4,8,2,1],["KITCHEN","Kitchen / Receiving","facility",6,8,2,1]
+];
+const classroomGradeByRoom={
+ "101":"K","102":"K","103":"K","104":"1","105":"1","106":"1",
+ "107":"2","108":"2","109":"2","110":"3","111":"3","112":"3",
+ "201":"4","202":"4","203":"4","204":"5","205":"5","206":"5",
+ "207":"6","208":"6","209":"6"
 };
 
-const firstNames = ["Ava","Liam","Olivia","Noah","Emma","Elijah","Sophia","James","Isabella","Lucas","Mia","Henry","Amelia","Benjamin","Harper","Theodore","Evelyn","Mateo","Charlotte","Jack","Luna","Levi","Sofia","Alexander","Camila","Daniel","Aria","Michael","Scarlett","Mason","Ella","Ethan","Avery","Logan","Mila","Owen","Gianna","Samuel","Layla","Sebastian","Nora","Aiden","Hazel","John","Lily","Joseph","Ellie","Wyatt","Violet","David"];
-const lastNames = ["Smith","Johnson","Brown","Taylor","Anderson","Thomas","Jackson","White","Harris","Martin","Thompson","Garcia","Martinez","Robinson","Clark","Rodriguez","Lewis","Lee","Walker","Hall","Allen","Young","King","Wright","Scott","Green","Baker","Adams","Nelson","Carter","Mitchell","Perez","Roberts","Turner"];
-const employeeNames = ["Alicia Carter","Miguel Lopez","Rachel Bennett","Dana Adams","Chris Thompson","Jenna Wilson","Marcus Reed","Tara Collins","Steven Harris","Natalie Morgan","Paula Taylor","Eric Evans","Monica Parker","Aaron Lewis"];
-
-function teacher(id,name,grade,room,age,exp,degree,license,contract,skill=82,morale=88){
-  const lane = degree === "MA+30" ? "MA30" : degree === "MA" ? "MA" : "BA";
-  return {id,name,category:"Teacher",position:`Grade ${grade} Teacher`,assignment:`Grade ${grade}`,grade,room,age,experience:exp,degree,license,contract,salary:salaryFor(lane,exp),skill,morale,status:"Active",leave:null,evaluation:null,history:[`Hired as Grade ${grade} Teacher`],yearsInDistrict:Math.min(exp, Math.max(1, exp-1))};
+function makeEmployee(name,category,position,assignment,room,exp=8,degree="BA",license="N/A",fte=1,schedule="7:30 AM–3:15 PM",salary=null){
+ return {id:uid("emp"),name,category,position,assignment,room,experience:exp,yearsInDistrict:Math.max(1,exp-rnd(0,3)),age:23+exp+rnd(0,15),degree,license,fte,schedule,salary:salary??(category==="Teacher"?teacherSalary(degree,exp):42000+exp*1150),contract:category==="Teacher"?(exp<3?"Probationary":"Professional"):"Classified",status:"Active",absence:null,leave:null,morale:rnd(78,95),performance:rnd(78,94),history:[`2026: Assigned as ${position}`],equipment:["ID badge","Building key"]};
 }
-function staff(id,name,category,position,assignment,age,exp,degree,license,contract,salary,room=null){
-  return {id,name,category,position,assignment,grade:null,room,age,experience:exp,degree,license,contract,salary,skill:80+((id*3)%12),morale:82+((id*2)%12),status:"Active",leave:null,evaluation:null,history:[`Hired as ${position}`],yearsInDistrict:Math.min(exp,Math.max(1,exp-1))};
+function makeTeacher(name,g,room,exp,degree="BA"){return makeEmployee(name,"Teacher",`Grade ${g} Teacher`,`Grade ${g}`,room,exp,degree,"Elementary K-6",1,"7:30 AM–3:15 PM",teacherSalary(degree,exp));}
+
+function initialEmployees(){
+ return [
+  makeTeacher("Mrs. Johnson","K","101",8,"MA"),makeTeacher("Mrs. Moore","K","102",15,"MA"),makeTeacher("Mrs. Davis","K","103",4,"BA"),
+  makeTeacher("Mrs. King","1","104",21,"MA+30"),makeTeacher("Mrs. Foster","1","105",10,"MA"),makeTeacher("Mrs. White","1","106",6,"BA"),
+  makeTeacher("Mr. Chen","2","107",11,"MA"),makeTeacher("Mrs. Evans","2","108",20,"MA+30"),makeTeacher("Mrs. Hall","2","109",7,"BA"),
+  makeTeacher("Mr. Clark","3","110",22,"MA"),makeTeacher("Mrs. Green","3","111",9,"MA"),makeTeacher("Mrs. Martinez","3","112",6,"BA"),
+  makeTeacher("Mr. Wright","4","201",28,"MA+30"),makeTeacher("Mrs. Young","4","202",13,"MA"),
+  makeTeacher("Mrs. Thompson","5","204",17,"MA"),makeTeacher("Mr. Parker","5","205",5,"BA"),
+  makeTeacher("Mr. Mitchell","6","207",19,"MA"),makeTeacher("Mrs. Campbell","6","208",14,"MA"),
+  makeEmployee("Mr. Williams","Administration","Principal","Main Office","OFFICE",24,"MA+30","Building Administrator",1,"7:00 AM–4:00 PM",98000),
+  makeEmployee("Ms. Grant","Administration","Assistant Principal","Main Office","OFFICE",15,"MA","Building Administrator",1,"7:15 AM–4:00 PM",82000),
+  makeEmployee("Mrs. Anderson","Office","School Secretary","Main Office","OFFICE",30,"BA","N/A",1,"7:15 AM–3:45 PM",47500),
+  makeEmployee("Nurse Taylor","Student Services","School Nurse","Health Office","NURSE",16,"BA","RN",1,"7:30 AM–3:15 PM",65000),
+  makeEmployee("Ms. Brown","Student Services","School Counselor","Counseling","COUNSEL",12,"MA","School Counselor",1,"7:30 AM–3:30 PM",67000),
+  makeEmployee("Dr. Lee","Student Services","School Psychologist","Psychology","COUNSEL",18,"MA+30","School Psychologist",.6,"8:00 AM–3:00 PM",79000),
+  makeEmployee("Ms. Rivera","Specials","Library / Media Teacher","Library","LIB",12,"MA","School Library",1,"7:30 AM–3:15 PM",teacherSalary("MA",12)),
+  makeEmployee("Mr. Davis","Specials","PE Teacher","Physical Education","GYM",18,"MA","Physical Education",1,"7:30 AM–3:15 PM",teacherSalary("MA",18)),
+  makeEmployee("Ms. Lewis","Specials","Music Teacher","Music","MUSIC",7,"BA","Music Education",1,"7:30 AM–3:15 PM",teacherSalary("BA",7)),
+  makeEmployee("Mrs. Grant","Specials","Art Teacher","Art","ART",23,"MA","Visual Arts",1,"7:30 AM–3:15 PM",teacherSalary("MA",23)),
+  makeEmployee("Ms. Flores","Special Education","Special Education Teacher","Resource Room","SPED",10,"MA","Mild Intervention K-6",1,"7:30 AM–3:15 PM",64000),
+  makeEmployee("Mr. Bryant","Special Education","Special Education Teacher","Resource Room","SPED",5,"BA","Mild Intervention K-6",1,"7:30 AM–3:15 PM",54500),
+  makeEmployee("Mrs. Webb","Instructional Support","Instructional Assistant","Kindergarten","101",18,"HS","Paraeducator",1,"7:30 AM–3:00 PM",32500),
+  makeEmployee("Ms. Diaz","Instructional Support","Special Education Para","Resource Room","SPED",4,"AA","Paraeducator",1,"7:30 AM–3:00 PM",33800),
+  makeEmployee("Mr. Nelson","Operations","Head Custodian","Building Operations","CUST",22,"HS","N/A",1,"6:00 AM–2:30 PM",46500),
+  makeEmployee("Ms. Price","Operations","Custodian","Building Operations","CUST",10,"HS","N/A",1,"2:30 PM–11:00 PM",39200),
+  makeEmployee("Mrs. Baker","Cafeteria","Cafeteria Manager","Cafeteria","CAF",17,"HS","Food Safety",1,"6:30 AM–2:00 PM",42000),
+  makeEmployee("Mr. Scott","Cafeteria","Cafeteria Assistant","Cafeteria","CAF",8,"HS","Food Safety",.8,"7:00 AM–1:30 PM",31500),
+  makeEmployee("Ms. Kim","Technology","School Technology Specialist","Technology","TECH",9,"BA","CompTIA A+",1,"7:30 AM–4:00 PM",61000)
+ ];
 }
-function salaryFor(lane,exp){const s=salarySchedule[lane]||salarySchedule.BA;return s[Math.min(exp,s.length-1)];}
-
-function initialState(){
-  const employees = [
-    teacher(1,"Mrs. Johnson","K","101",32,8,"MA","Elementary K-6","Professional",84,91),
-    teacher(2,"Mrs. Moore","K","102",39,15,"MA","Elementary K-6","Professional",87,88),
-    teacher(3,"Mrs. Davis","K","103",27,4,"BA","Elementary K-6","Probationary",77,93),
-    teacher(4,"Mrs. King","1","104",45,21,"MA+30","Elementary K-6","Professional",90,84),
-    teacher(5,"Mrs. Foster","1","105",34,10,"MA","Elementary K-6","Professional",83,90),
-    teacher(6,"Mrs. White","1","106",29,6,"BA","Elementary K-6","Professional",80,87),
-    teacher(7,"Mr. Chen","2","107",35,11,"MA","Elementary K-6","Professional",91,92),
-    teacher(8,"Mrs. Evans","2","108",44,20,"MA+30","Elementary K-6","Professional",86,85),
-    teacher(9,"Mrs. Hall","2","109",31,7,"BA","Elementary K-6","Professional",81,89),
-    teacher(10,"Mr. Clark","3","110",46,22,"MA","Elementary K-6","Professional",89,81),
-    teacher(11,"Mrs. Green","3","111",33,9,"MA","Elementary K-6","Professional",84,88),
-    teacher(12,"Mrs. Martinez","3","112",30,6,"BA","Elementary K-6","Professional",82,93),
-    teacher(13,"Mr. Wright","4","113",52,28,"MA+30","Elementary K-6","Professional",88,79),
-    teacher(14,"Mrs. Young","4","114",37,13,"MA","Elementary K-6","Professional",85,88),
-    teacher(15,"Mrs. Thompson","5","116",41,17,"MA","Elementary K-6","Professional",86,86),
-    teacher(16,"Mr. Parker","5","117",28,5,"BA","Elementary K-6","Probationary",79,94),
-    teacher(17,"Mr. Mitchell","6","119",43,19,"MA","Elementary K-6","Professional",86,84),
-    teacher(18,"Mrs. Campbell","6","120",38,14,"MA","Elementary K-6","Professional",85,89),
-    staff(19,"Mr. Williams","Administration","Principal","Main Office",48,24,"MA+30","Building Administrator","Administrative",98000,"PRIN"),
-    staff(20,"Ms. Grant","Administration","Assistant Principal","Main Office",39,15,"MA","Building Administrator","Administrative",82000,"OFFICE"),
-    staff(21,"Mrs. Anderson","Office","School Secretary","Main Office",56,30,"BA","N/A","Classified",47500,"OFFICE"),
-    staff(22,"Nurse Taylor","Student Services","School Nurse","Health Office",42,16,"BA","RN","Professional",65000,"NURSE"),
-    staff(23,"Ms. Brown","Student Services","School Counselor","Counseling",37,12,"MA","School Counselor","Professional",67000,"COUNSEL"),
-    staff(24,"Dr. Lee","Student Services","School Psychologist","Psychology",45,18,"MA+30","School Psychologist","Professional",79000,"PSYCH"),
-    staff(25,"Ms. Rivera","Specials","Library / Media Teacher","Library",36,12,"MA","School Library","Professional",salaryFor("MA",12),"LIB"),
-    staff(26,"Mr. Davis","Specials","PE Teacher","Physical Education",42,18,"MA","Physical Education","Professional",salaryFor("MA",18),"GYM"),
-    staff(27,"Ms. Lewis","Specials","Music Teacher","Music",31,7,"BA","Music Education","Professional",salaryFor("BA",7),"MUSIC"),
-    staff(28,"Mrs. Grant","Specials","Art Teacher","Art",47,23,"MA","Visual Arts","Professional",salaryFor("MA",23),"ART"),
-    staff(29,"Ms. Flores","Special Education","Special Education Teacher","Resource Room",35,10,"MA","Mild Intervention K-6","Professional",64000,"SPED"),
-    staff(30,"Mr. Bryant","Special Education","Special Education Teacher","Resource Room",29,5,"BA","Mild Intervention K-6","Probationary",54500,"SPED"),
-    staff(31,"Mrs. Webb","Instructional Support","Instructional Assistant","Kindergarten",52,18,"HS","N/A","Classified",32500,"101"),
-    staff(32,"Ms. Diaz","Instructional Support","Special Education Para","Resource Room",26,4,"AA","Paraeducator","Classified",33800,"SPED"),
-    staff(33,"Mr. Nelson","Operations","Head Custodian","Building Operations",50,22,"HS","N/A","Classified",46500,"CUST"),
-    staff(34,"Ms. Price","Operations","Custodian","Building Operations",38,10,"HS","N/A","Classified",39200,"CUST"),
-    staff(35,"Mrs. Baker","Cafeteria","Cafeteria Manager","Cafeteria",46,17,"HS","Food Safety","Classified",42000,"CAF"),
-    staff(36,"Mr. Scott","Cafeteria","Cafeteria Assistant","Cafeteria",34,8,"HS","Food Safety","Classified",31500,"CAF"),
-    staff(37,"Ms. Kim","Technology","School Technology Specialist","Technology",33,9,"BA","CompTIA A+","Professional",61000,"TECH")
-  ];
-
-  const rooms=[]; let num=101;
-  GRADES.forEach(g=>{for(let i=0;i<3;i++){rooms.push({id:String(num++),grade:g,capacity:g==="K"?20:["1","2"].includes(g)?22:["3","4"].includes(g)?24:26});}});
-  const state={year:2026,budget:4250000,selectedRoom:null,selectedEmployee:null,nextEmployeeId:100,nextStudentId:1000,enrollment:{K:53,1:62,2:61,3:63,4:43,5:49,6:47},projected:{},employees,rooms,students:[],boardRelationship:72,boardIssues:[],boardHistory:[],hrEvents:["New school year staffing plan opened."],events:["Aug 12 — Teacher Work Day","Aug 13 — First Student Day","Sep 7 — No School"],districtRaise:0,lastSaved:null};
-  generateStudentsForState(state);
-  projectNext(state);
-  generateBoardIssue(state,true);
-  return state;
+function initialRooms(){
+ return ROOM_LAYOUT.filter(x=>x[2]!=="circulation").map(([id,name,type])=>({
+  id,name,type,grade:classroomGradeByRoom[id]||null,capacity:classroomGradeByRoom[id]?(classroomGradeByRoom[id]==="K"?20:["1","2"].includes(classroomGradeByRoom[id])?22:24):null,
+  condition:rnd(80,98),cleanliness:rnd(84,99),temp:rnd(69,74),workOrders:[],equipment:type==="classroom"?["Interactive display","Teacher laptop","Student desks"]:[],status:"Open"
+ }));
 }
-
-let state = initialState();
-
-function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
-function money(v){return "$"+Math.round(v).toLocaleString();}
-function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-function activeEmployees(){return state.employees.filter(e=>e.status!=="Resigned"&&e.status!=="Retired"&&e.status!=="Terminated");}
-function classroomTeachers(){return activeEmployees().filter(e=>e.category==="Teacher");}
-function teacherNeed(g){return Math.ceil(state.enrollment[g]/TARGETS[g]);}
-function teachersAssigned(g){return classroomTeachers().filter(e=>e.grade===g && !e.leave).length;}
-function payroll(){return activeEmployees().reduce((s,e)=>s+e.salary,0);}
-function totalEnrollment(){return state.students.filter(s=>s.status==="Active").length;}
-function projectedTotal(){return GRADES.reduce((s,g)=>s+state.projected[g],0);}
-function currentTeacherInRoom(room){return classroomTeachers().find(e=>e.room===room.id && !e.leave);}
-function roomRoster(roomId){return state.students.filter(s=>s.status==="Active"&&s.room===roomId);}
-function classLoad(room){return roomRoster(room.id).length;}
-function setMessage(html){document.getElementById("messageBar").innerHTML=html;}
-function logHr(text){state.hrEvents.unshift(`${state.year}: ${text}`);state.hrEvents=state.hrEvents.slice(0,20);}
-
-function projectNext(s=state){s.projected={K:rand(45,75),1:s.enrollment.K,2:s.enrollment["1"],3:s.enrollment["2"],4:s.enrollment["3"],5:s.enrollment["4"],6:s.enrollment["5"]};}
-
-function generateStudentsForState(s){
-  s.students=[];
-  GRADES.forEach(g=>{
-    for(let i=0;i<s.enrollment[g];i++) s.students.push(makeStudent(s,g));
-  });
-  assignStudentsToRooms(s);
-}
-function makeStudent(s,grade){
-  const id=s.nextStudentId++;
-  return {id,name:`${firstNames[rand(0,firstNames.length-1)]} ${lastNames[rand(0,lastNames.length-1)]}`,grade,room:null,iep:rand(1,100)<=12,plan504:rand(1,100)<=6,attendance:rand(91,100),status:"Active",history:[`${s.year}: Enrolled in Grade ${grade}`]};
-}
-function assignStudentsToRooms(s=state){
-  GRADES.forEach(g=>{
-    const teachers=s.employees.filter(e=>e.category==="Teacher"&&e.grade===g&&e.status==="Active"&&!e.leave&&e.room);
-    const rooms=teachers.map(t=>t.room);
-    const kids=s.students.filter(st=>st.status==="Active"&&st.grade===g);
-    kids.forEach((kid,i)=>kid.room=rooms.length?rooms[i%rooms.length]:null);
-  });
-}
-function syncEnrollmentFromStudents(){GRADES.forEach(g=>state.enrollment[g]=state.students.filter(s=>s.status==="Active"&&s.grade===g).length);}
-
-function renderAll(){renderMetrics();renderFloor();renderRoomDetails();renderAssignSelect();renderSummaries();renderEvents();renderStaffView();renderStudentsView();renderHrView();renderBudgetView();renderBoardView();}
-
-function renderMetrics(){
-  const needed=GRADES.reduce((s,g)=>s+teacherNeed(g),0);
-  const alerts=GRADES.filter(g=>teachersAssigned(g)!==teacherNeed(g)).length + activeEmployees().filter(e=>e.leave).length + state.employees.filter(e=>e.status==="Resigned").length;
-  document.getElementById("metricYear").textContent=`${state.year}–${state.year+1}`;
-  document.getElementById("metricEnrollment").textContent=`${totalEnrollment()} Students`;
-  document.getElementById("metricEnrollmentNext").textContent=`Projected ${projectedTotal()}`;
-  document.getElementById("metricStaff").textContent=`${activeEmployees().length}`;
-  document.getElementById("metricOpenings").textContent=`${Math.max(0,needed-classroomTeachers().filter(e=>!e.leave).length)} teacher openings`;
-  document.getElementById("metricBudget").textContent=money(state.budget);
-  document.getElementById("metricPayroll").textContent=`Payroll ${money(payroll())}`;
-  document.getElementById("metricClassSize").textContent=(totalEnrollment()/Math.max(1,classroomTeachers().filter(e=>!e.leave).length)).toFixed(1);
-  document.getElementById("metricRooms").textContent=state.rooms.filter(r=>!currentTeacherInRoom(r)).length;
-  document.getElementById("metricAlerts").textContent=alerts;
-}
-function roomClass(g){return g==="K"?"k":`g${g}`;}
-function renderFloor(){
-  GRADES.forEach(g=>{
-    const box=document.getElementById(`wing${g}`);box.innerHTML="";
-    state.rooms.filter(r=>r.grade===g).forEach(r=>{
-      const t=currentTeacherInRoom(r), load=classLoad(r); const btn=document.createElement("button");btn.type="button";btn.className=`room ${roomClass(g)} ${state.selectedRoom===r.id?"selected":""}`;
-      const status=!t?"⚪":load>r.capacity?"🔴":teachersAssigned(g)<teacherNeed(g)?"🟠":"🟢";
-      btn.innerHTML=`<strong>Room ${r.id}</strong><span>Grade ${g}</span><span>${t?t.name:"Vacant"}</span><strong>${load} / ${r.capacity}</strong><span>${status}</span>`;
-      btn.addEventListener("click",()=>assignOrSelectClassroom(r));box.appendChild(btn);
-    });
-  });
-  const support=[
-    ["NURSE","Nurse","🩺"],["COUNSEL","Counselor","👥"],["PSYCH","Psychologist","🧠"],["OFFICE","Main Office","💻"],["PRIN","Principal","⭐"],["SPED","Special Education","🧩"],["CUST","Custodial","🧹"],["TECH","Technology","💻"]
-  ];
-  const sg=document.getElementById("supportRooms");sg.innerHTML="";
-  support.forEach(([id,label,icon])=>{const btn=document.createElement("button");btn.type="button";btn.className="room support";const assigned=activeEmployees().filter(e=>e.room===id).map(e=>e.name).slice(0,2).join(", ")||"Vacant";btn.innerHTML=`<strong>${label}</strong><span>${assigned}</span><div class="icon">${icon}</div>`;btn.addEventListener("click",()=>assignOrSelectSupport(id,label));sg.appendChild(btn);});
-  [["LIB","Library"],["GYM","PE"],["MUSIC","Music"],["ART","Art"],["CAF","Cafeteria"]].forEach(([id])=>{const el=document.getElementById(`label-${id}`);if(el){const names=activeEmployees().filter(e=>e.room===id).map(e=>e.name).join(", ");el.textContent=names||"Vacant";}});
-}
-function assignOrSelectClassroom(room){
-  const emp=activeEmployees().find(e=>e.id===state.selectedEmployee);
-  if(emp){
-    if(emp.category!=="Teacher" && emp.category!=="Instructional Support"){setMessage(`<strong>Invalid assignment:</strong> ${emp.position} cannot be assigned as a classroom teacher.`);return;}
-    if(emp.category==="Teacher"){
-      const occ=currentTeacherInRoom(room); if(occ&&occ.id!==emp.id){setMessage(`<strong>Room occupied:</strong> ${occ.name} already has Room ${room.id}.`);return;}
-      const old=emp.assignment; emp.grade=room.grade; emp.assignment=`Grade ${room.grade}`; emp.room=room.id; emp.morale=clamp(emp.morale-2,0,100);emp.history.push(`${state.year}: Transferred from ${old} to Grade ${room.grade}, Room ${room.id}`);logHr(`${emp.name} transferred to Grade ${room.grade}, Room ${room.id}.`);
-    } else {emp.assignment=`Grade ${room.grade} Support`;emp.room=room.id;emp.history.push(`${state.year}: Assigned to Room ${room.id}`);}
-    state.selectedRoom=room.id;assignStudentsToRooms();renderAll();setMessage(`<strong>Assignment updated:</strong> ${emp.name} → Room ${room.id}.`);return;
+function generateFamiliesAndStudents(state,counts={K:53,1:62,2:61,3:63,4:43,5:49,6:47}){
+ state.families=[]; state.students=[];
+ let seq=1;
+ for(const g of GRADES){
+  for(let i=0;i<counts[g];i++){
+   let family;
+   if(state.families.length && Math.random()<.22) family=pick(state.families);
+   else{
+    let ln=pick(lastNames);
+    family={id:uid("fam"),name:`${ln} Family`,lastName:ln,engagement:pick(["High","Typical","Typical","Typical","Low"]),addressZone:pick(["Oakwood","River Bend","Lincoln Heights","Willow Creek","Rural North"]),phone:`555-${rnd(200,999)}-${rnd(1000,9999)}`,history:["Enrolled at Lincoln"]};
+    state.families.push(family);
+   }
+   let s={id:`S${1000+seq++}`,first:pick(firstNames),last:family.lastName,grade:g,room:null,familyId:family.id,transport:pick(["Bus","Bus","Bus","Car rider","Walker","Daycare"]),iep:Math.random()<.12,plan504:Math.random()<.06,ell:Math.random()<.05,attendance:rnd(91,100),reading:rnd(55,96),math:rnd(55,96),status:"Active",history:[`2026: Enrolled in Grade ${g}`]};
+   state.students.push(s);
   }
-  state.selectedRoom=room.id;renderFloor();renderRoomDetails();
+ }
+ assignStudents(state);
 }
-function assignOrSelectSupport(roomId,label){
-  const emp=activeEmployees().find(e=>e.id===state.selectedEmployee);
-  if(emp){emp.room=roomId;emp.assignment=label;emp.history.push(`${state.year}: Assigned to ${label}`);logHr(`${emp.name} reassigned to ${label}.`);state.selectedRoom=roomId;renderAll();setMessage(`<strong>Assignment updated:</strong> ${emp.name} → ${label}.`);return;}
-  state.selectedRoom=roomId;renderRoomDetails();
+function assignStudents(state){
+ for(const g of GRADES){
+  const teachers=state.employees.filter(e=>e.category==="Teacher"&&e.assignment===`Grade ${g}`&&e.status!=="Resigned"&&e.room);
+  const rooms=teachers.map(t=>t.room);
+  const kids=state.students.filter(s=>s.status==="Active"&&s.grade===g);
+  kids.sort((a,b)=>(Number(b.iep)+Number(b.plan504)+Number(b.ell))-(Number(a.iep)+Number(a.plan504)+Number(a.ell)));
+  kids.forEach((s,i)=>s.room=rooms.length?rooms[i%rooms.length]:null);
+ }
 }
-function handleSpecialClick(roomId){
-  const label={LIB:"Library",GYM:"Physical Education",MUSIC:"Music",ART:"Art",CAF:"Cafeteria"}[roomId];
-  assignOrSelectSupport(roomId,label);
+function initialPositions(){
+ return [
+  ...GRADES.map(g=>({id:`T${g}`,role:`Grade ${g} Teacher`,category:"Teacher",authorized:3,filled:g==="4"||g==="5"||g==="6"?2:3,fte:1})),
+  {id:"SPEDT",role:"Special Education Teacher",category:"Special Education",authorized:2,filled:2,fte:1},
+  {id:"PARA",role:"Special Education Para",category:"Instructional Support",authorized:2,filled:1,fte:1},
+  {id:"CUST",role:"Custodian",category:"Operations",authorized:3,filled:2,fte:1},
+  {id:"CAF",role:"Cafeteria Assistant",category:"Cafeteria",authorized:2,filled:1,fte:.8},
+  {id:"COUNSEL",role:"School Counselor",category:"Student Services",authorized:1,filled:1,fte:1},
+  {id:"TECH",role:"Technology Specialist",category:"Technology",authorized:1,filled:1,fte:1}
+ ];
 }
+function initialState(){
+ let state={version:3,schoolYear:"2026–27",date:"2026-08-13",instructionalDay:1,maxInstructionalDays:180,lastDayRan:false,
+  employees:initialEmployees(),rooms:initialRooms(),families:[],students:[],positions:initialPositions(),vacancies:[],applications:[],substitutes:[
+   {id:"SUB1",name:"Linda Harper",qualified:"Elementary K-6",reliability:92,status:"Available"},
+   {id:"SUB2",name:"James Reed",qualified:"Elementary K-6",reliability:84,status:"Available"},
+   {id:"SUB3",name:"Karen Miles",qualified:"Elementary K-6",reliability:76,status:"Available"},
+   {id:"SUB4",name:"Todd Baker",qualified:"Classified / Para",reliability:88,status:"Available"}
+  ],absences:[],coverage:[],inbox:[],activity:[],schedule:[],purchaseOrders:[],boardIssues:[],boardHistory:[],workOrders:[],
+  finance:{operatingBudget:4250000,stateRevenue:4025000,localRevenue:525000,grants:125000,otherRevenue:45000,spentOps:0,capitalBudget:620000},
+  metrics:{parentSatisfaction:84,staffMorale:87,safety:94,academics:78,attendance:95.6,building:90,reputation:82},
+  neighborhoods:[
+   {name:"Oakwood",students:102,growth:1.2},{name:"River Bend",students:74,growth:.4},{name:"Lincoln Heights",students:138,growth:-.2},{name:"Willow Creek",students:38,growth:6.8},{name:"Rural North",students:62,growth:.5}
+  ],fiscalHistory:[],selectedRoom:null,selectedMessage:null,weather:{condition:"Clear",temp:72,roads:"Dry"},settings:{showCounts:true,showTemps:false,showCleaning:false,showOrders:true}
+ };
+ generateFamiliesAndStudents(state);
+ seedInbox(state); seedSchedule(state); seedWorkOrders(state);
+ return state;
+}
+function seedInbox(s){
+ s.inbox=[
+  msg("Superintendent Office","Welcome to the 2026–27 school year","Please submit your opening-week staffing and enrollment report by Friday.","low",["Acknowledge"]),
+  msg("HR","Position authorization reminder","Any position above approved FTE requires district authorization before posting.","medium",["Open HR"]),
+  msg("Facilities","Summer project closeout","All summer projects are complete except final punch-list work in the cafeteria receiving area.","low",["Create Work Order"]),
+  msg("Parent — Garcia Family","Class placement question","Our child was placed in Grade 2 Room 108. Could someone explain the placement process?","medium",["Reply","Forward to AP"])
+ ];
+}
+function seedSchedule(s){
+ s.schedule=[
+  {time:"7:15 AM",item:"Morning leadership check-in"},
+  {time:"8:10 AM",item:"Arrival supervision / bus & car line"},
+  {time:"9:30 AM",item:"Grade 1 classroom walkthrough"},
+  {time:"11:00 AM",item:"IEP case conference"},
+  {time:"1:15 PM",item:"Interview block / HR hold"},
+  {time:"2:35 PM",item:"Dismissal supervision"},
+  {time:"3:20 PM",item:"Staff follow-up / parent calls"}
+ ];
+}
+function seedWorkOrders(s){
+ let r=s.rooms.find(x=>x.id==="CAF"); if(r){let w=workOrder("CAF","Receiving door closer not latching reliably","Medium");s.workOrders.push(w);r.workOrders.push(w.id);}
+}
+function msg(from,subject,body,priority="low",actions=[]){return{id:uid("msg"),from,subject,body,priority,actions,read:false,status:"Open",date:new Date().toISOString()};}
+function workOrder(roomId,issue,priority="Medium"){return{id:uid("wo"),roomId,issue,priority,status:"Open",age:0,assigned:priority==="High"?"District Maintenance":"Head Custodian",created:"2026-08-13"};}
 
-function renderRoomDetails(){
-  const box=document.getElementById("roomDetails"), r=state.rooms.find(x=>x.id===state.selectedRoom);
-  if(r){const t=currentTeacherInRoom(r), roster=roomRoster(r.id);box.innerHTML=`<h3>Room ${r.id} — Grade ${r.grade}</h3><p>Teacher: <strong>${t?t.name:"Vacant"}</strong></p><p>Students: <strong>${roster.length} / ${r.capacity}</strong></p>${t?employeeMini(t):"<p><em>Held open for future enrollment growth.</em></p>"}<button class="secondary full" id="roomRosterBtn">View ${roster.length} Students</button>`;document.getElementById("roomRosterBtn").addEventListener("click",()=>openRoster(r.id));return;}
-  const roomId=state.selectedRoom;if(roomId){const staffHere=activeEmployees().filter(e=>e.room===roomId);box.innerHTML=`<h3>${roomName(roomId)}</h3>${staffHere.length?staffHere.map(employeeMini).join("<hr>"):"<p>Vacant / no assigned staff.</p>"}`;return;}
-  box.textContent="Click a classroom or special area.";
-}
-function employeeMini(e){return `<div class="compact-item"><strong>${e.name}</strong><br>${e.position}<br>Age ${e.age} · ${e.experience} yrs experience<br>${e.degree} · ${e.license}<br>${e.contract} · ${money(e.salary)}${e.leave?`<br><span class="badge warn">On ${e.leave.type}</span>`:""}</div>`;}
-function roomName(id){return {LIB:"Library / Media",GYM:"Gym / PE",MUSIC:"Music",ART:"Art",CAF:"Cafeteria",NURSE:"Nurse",COUNSEL:"Counseling",PSYCH:"Psychology",OFFICE:"Main Office",PRIN:"Principal Office",SPED:"Special Education",CUST:"Custodial",TECH:"Technology"}[id]||id;}
-function renderAssignSelect(){const sel=document.getElementById("assignStaffSelect");sel.innerHTML='<option value="">-- Select Employee --</option>';activeEmployees().forEach(e=>{const o=document.createElement("option");o.value=e.id;o.textContent=`${e.name} — ${e.position} · Age ${e.age} · ${e.experience} yrs`;sel.appendChild(o);});sel.value=state.selectedEmployee||"";}
-function renderSummaries(){
-  const ss=document.getElementById("staffingSummary");ss.innerHTML="";GRADES.forEach(g=>{const d=document.createElement("div");d.innerHTML=`<strong>${g}</strong><span>${teachersAssigned(g)===teacherNeed(g)?"🟢":teachersAssigned(g)<teacherNeed(g)?"🟠":"🔵"}</span><strong>${teachersAssigned(g)}/${teacherNeed(g)}</strong>`;ss.appendChild(d);});
-  const cs=document.getElementById("censusSummary");cs.innerHTML="";GRADES.forEach(g=>{const d=document.createElement("div"),diff=state.projected[g]-state.enrollment[g];d.innerHTML=`<strong>${g}</strong><span>${state.projected[g]}</span><strong>${diff>=0?"+":""}${diff}</strong>`;cs.appendChild(d);});
-  const ls=document.getElementById("leaveSummary");const leaves=activeEmployees().filter(e=>e.leave);ls.innerHTML=leaves.length?leaves.map(e=>`<div class="compact-item"><strong>${e.name}</strong> — ${e.leave.type}<br>Returns ${e.leave.returnYear}</div>`).join(""):"<span class='muted'>No active leaves.</span>";
-}
-function renderEvents(){document.getElementById("eventList").innerHTML=state.events.map(x=>`<div class="compact-item">${x}</div>`).join("");}
+let state=initialState();
 
-function renderStaffView(){
-  const categories=[...new Set(activeEmployees().map(e=>e.category))].sort();const f=document.getElementById("staffCategoryFilter");const current=f.value||"all";f.innerHTML='<option value="all">All Categories</option>'+categories.map(c=>`<option>${c}</option>`).join("");f.value=categories.includes(current)?current:"all";
-  const q=document.getElementById("staffSearch").value.toLowerCase(), cat=f.value;const list=activeEmployees().filter(e=>(cat==="all"||e.category===cat)&&(!q||e.name.toLowerCase().includes(q)||e.position.toLowerCase().includes(q)));
-  document.getElementById("staffTableBody").innerHTML=list.map(e=>`<tr data-employee="${e.id}"><td><button class="link-btn" data-open-employee="${e.id}">${e.name}</button></td><td>${e.position}</td><td>${e.assignment}</td><td>${e.age}</td><td>${e.experience} yrs</td><td>${e.degree}</td><td>${e.license}</td><td>${e.contract}</td><td>${money(e.salary)}</td><td>${employeeStatusBadge(e)}</td></tr>`).join("");
-  document.querySelectorAll("[data-open-employee]").forEach(b=>b.addEventListener("click",()=>openEmployee(Number(b.dataset.openEmployee))));
-}
-function employeeStatusBadge(e){if(e.leave)return `<span class="badge warn">${e.leave.type}</span>`;return `<span class="badge good">${e.status}</span>`;}
+function activeEmployees(){return state.employees.filter(e=>!["Resigned","Retired","Terminated"].includes(e.status));}
+function enrollment(){return state.students.filter(s=>s.status==="Active").length;}
+function payroll(){return activeEmployees().reduce((a,e)=>a+e.salary*e.fte,0);}
+function benefits(){return Math.round(payroll()*.29);}
+function committedPO(){return state.purchaseOrders.filter(p=>p.status!=="Closed").reduce((a,p)=>a+p.amount,0);}
+function availableOperating(){return state.finance.operatingBudget-payroll()-benefits()-state.finance.spentOps-committedPO();}
+function roomById(id){return state.rooms.find(r=>r.id===id);}
+function teacherForRoom(id){return activeEmployees().find(e=>e.category==="Teacher"&&e.room===id);}
+function studentsInRoom(id){return state.students.filter(s=>s.status==="Active"&&s.room===id);}
+function avg(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:0;}
+function buildingScore(){return Math.round(avg(state.rooms.map(r=>(r.condition+r.cleanliness)/2)));}
 
-function renderStudentsView(){
-  const gf=document.getElementById("studentGradeFilter");if(gf.options.length===1)GRADES.forEach(g=>gf.add(new Option(`Grade ${g}`,g)));const rf=document.getElementById("studentRoomFilter");const old=rf.value;rf.innerHTML='<option value="all">All Rooms</option>'+state.rooms.map(r=>`<option value="${r.id}">Room ${r.id}</option>`).join("");rf.value=[...rf.options].some(o=>o.value===old)?old:"all";
-  const grade=gf.value,room=rf.value,q=document.getElementById("studentSearch").value.toLowerCase();const list=state.students.filter(s=>s.status==="Active"&&(grade==="all"||s.grade===grade)&&(room==="all"||s.room===room)&&(!q||s.name.toLowerCase().includes(q)));
-  document.getElementById("studentTableBody").innerHTML=list.slice(0,500).map(s=>{const t=activeEmployees().find(e=>e.room===s.room&&e.category==="Teacher");return `<tr><td>${s.name}</td><td>${s.grade}</td><td>${s.room||"Unassigned"}</td><td>${t?t.name:"—"}</td><td>${s.iep?"Yes":""}</td><td>${s.plan504?"Yes":""}</td><td>${s.attendance}%</td></tr>`;}).join("");
-}
+function toast(t){let e=$("toast");e.textContent=t;e.classList.remove("hidden");clearTimeout(window.__toast);window.__toast=setTimeout(()=>e.classList.add("hidden"),2600);}
+function log(t){state.activity.unshift(`${fmtDate(state.date)} — ${t}`);state.activity=state.activity.slice(0,30);}
+function openModal(title,html){$("modalTitle").textContent=title;$("modalBody").innerHTML=html;$("modal").classList.remove("hidden");}
+function closeModal(){$("modal").classList.add("hidden");}
 
-function renderHrView(){
-  document.getElementById("salaryScheduleBody").innerHTML=[0,5,10,15,20,25,30].map(step=>`<tr><td>${step}</td><td>${money(salarySchedule.BA[step])}</td><td>${money(salarySchedule.MA[step])}</td><td>${money(salarySchedule.MA30[step])}</td></tr>`).join("");
-  const probs=activeEmployees().filter(e=>e.contract==="Probationary").length,pro=activeEmployees().filter(e=>e.contract==="Professional").length,classified=activeEmployees().filter(e=>e.contract==="Classified").length;
-  document.getElementById("contractSummary").innerHTML=statBox("Probationary",probs)+statBox("Professional",pro)+statBox("Classified",classified);
-  const licenseIssues=activeEmployees().filter(e=>e.category==="Teacher"&&!e.license.includes("Elementary"));document.getElementById("licenseAlerts").innerHTML=licenseIssues.length?licenseIssues.map(e=>`<div class="compact-item danger">${e.name}: license mismatch</div>`).join(""):"<span class='muted'>No classroom licensure alerts.</span>";
-  const leaves=activeEmployees().filter(e=>e.leave);document.getElementById("leaveTable").innerHTML=leaves.length?leaves.map(e=>`<div class="compact-item"><strong>${e.name}</strong> — ${e.leave.type}<br>${e.leave.reason} · return ${e.leave.returnYear}</div>`).join(""):"<span class='muted'>No employees currently on leave.</span>";
-  document.getElementById("hrEvents").innerHTML=state.hrEvents.map(e=>`<div class="compact-item">${e}</div>`).join("");
+function updatePositionFill(){
+ state.positions.forEach(p=>{
+  if(p.category==="Teacher"){
+   let g=p.role.match(/Grade (.+) Teacher/)?.[1];
+   p.filled=activeEmployees().filter(e=>e.category==="Teacher"&&e.assignment===`Grade ${g}`).length;
+  }else p.filled=activeEmployees().filter(e=>e.position===p.role || (p.role==="Custodian"&&e.category==="Operations"&&e.position.includes("Custodian")) || (p.role==="Cafeteria Assistant"&&e.position==="Cafeteria Assistant") || (p.role==="Special Education Para"&&e.position==="Special Education Para") || (p.role==="Technology Specialist"&&e.category==="Technology")).reduce((a,e)=>a+e.fte,0);
+ });
 }
-function statBox(label,value){return `<div class="stat-box"><span>${label}</span><strong>${value}</strong></div>`;}
-
-function renderBudgetView(){
-  const p=payroll(), benefits=Math.round(p*.28), remaining=state.budget-p-benefits;document.getElementById("budgetCards").innerHTML=statBox("Budget",money(state.budget))+statBox("Payroll",money(p))+statBox("Benefits",money(benefits))+statBox("Other Available",money(Math.max(0,remaining)));
-  document.getElementById("barPayroll").style.width=`${Math.min(75,Math.round(p/state.budget*100))}%`;
-  const cats={};activeEmployees().forEach(e=>cats[e.category]=(cats[e.category]||0)+e.salary);document.getElementById("payrollByCategory").innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="category-row"><span>${c}</span><strong>${money(v)}</strong></div>`).join("");
-}
-
-function renderBoardView(){
-  document.getElementById("boardRelationship").innerHTML=`<div class="stat-box"><span>Board Support</span><strong>${state.boardRelationship}%</strong></div><p class="muted">Higher support improves the odds of approving your recommendations.</p>`;
-  const area=document.getElementById("boardIssues");area.innerHTML=state.boardIssues.length?state.boardIssues.map(issue=>`<div class="board-issue"><h3>${issue.title}</h3><p>${issue.description}</p><p><strong>Financial impact:</strong> ${issue.cost>=0?money(issue.cost):"Saves "+money(Math.abs(issue.cost))}</p><div class="board-actions"><button class="secondary" data-board="recommend" data-id="${issue.id}">Recommend Approval</button><button class="secondary" data-board="oppose" data-id="${issue.id}">Recommend Denial</button></div></div>`).join(""):"<p class='muted'>No pending board issues.</p>";
-  document.querySelectorAll("[data-board]").forEach(b=>b.addEventListener("click",()=>voteBoard(Number(b.dataset.id),b.dataset.board)));
-  document.getElementById("boardHistory").innerHTML=state.boardHistory.length?state.boardHistory.slice(0,10).map(x=>`<div class="compact-item">${x}</div>`).join(""):"<span class='muted'>No board votes yet.</span>";
-}
-function generateBoardIssue(s=state,initial=false){
-  const options=[
-    {title:"Add a Special Education Para",description:"Approve one additional special education para to support increasing IEP needs.",cost:35500,effect:"para"},
-    {title:"Technology Refresh",description:"Replace aging classroom laptops and interactive displays.",cost:85000,effect:"tech"},
-    {title:"Add Assistant Custodian",description:"Increase evening custodial staffing and reduce deferred cleaning.",cost:41000,effect:"custodian"},
-    {title:"Cut One Classroom Position",description:"Reduce payroll by eliminating one vacant or excess teaching position.",cost:-56000,effect:"cutTeacher"},
-    {title:"2.5% Salary Increase",description:"Approve a district-wide 2.5% salary increase for all school employees.",cost:Math.round(s.employees.filter(e=>e.status!=="Resigned"&&e.status!=="Retired"&&e.status!=="Terminated").reduce((sum,e)=>sum+e.salary,0)*.025),effect:"raise",percent:2.5}
-  ];
-  const x={...options[rand(0,options.length-1)],id:Date.now()+rand(1,9999)};s.boardIssues.push(x);if(!initial)setMessage(`<strong>New board issue:</strong> ${x.title}`);
-}
-function voteBoard(id,recommendation){
-  const issue=state.boardIssues.find(i=>i.id===id);
-  if(!issue)return;
-  let approvalChance = recommendation === "recommend" ? state.boardRelationship + 8 : 100 - state.boardRelationship - 5;
-  if(issue.cost > 100000) approvalChance -= 8;
-  const approved = rand(1,100) <= clamp(approvalChance,15,95);
-  if(approved) applyBoardEffect(issue);
-  const matchedYourAdvice = (recommendation === "recommend" && approved) || (recommendation === "oppose" && !approved);
-  state.boardRelationship = clamp(state.boardRelationship + (matchedYourAdvice ? 3 : -4),25,95);
-  state.boardHistory.unshift(`${state.year}: Board ${approved?"approved":"rejected"} ${issue.title}.`);
-  state.boardIssues=state.boardIssues.filter(i=>i.id!==id);
-  renderAll();
-  setMessage(`<strong>Board vote:</strong> ${issue.title} was ${approved?"APPROVED":"REJECTED"}.`);
-}
-function applyBoardEffect(issue){
-  if(issue.cost>0)state.budget-=issue.cost;else state.budget+=Math.abs(issue.cost);
-  if(issue.effect==="raise")applyRaise(issue.percent||2.5);
-  if(issue.effect==="para")hireGeneratedStaff("Instructional Support","Special Education Para","Special Education","AA","Paraeducator","Classified",35500,"SPED");
-  if(issue.effect==="custodian")hireGeneratedStaff("Operations","Custodian","Building Operations","HS","N/A","Classified",41000,"CUST");
-}
-function applyRaise(percent){state.employees.forEach(e=>{if(e.status==="Active")e.salary=Math.round(e.salary*(1+percent/100));});state.districtRaise+=percent;logHr(`Board approved ${percent}% salary increase.`);}
-
-function openEmployee(id){
-  const e=state.employees.find(x=>x.id===id);if(!e)return;showModal(e.name,`<div class="stat-grid">${statBox("Age",e.age)}${statBox("Experience",e.experience+" yrs")}${statBox("Salary",money(e.salary))}</div><p><strong>${e.position}</strong> — ${e.assignment}</p><p>${e.degree} · ${e.license} · ${e.contract}</p><p>Performance ${e.skill}% · Morale ${e.morale}%</p><h3>Career History</h3><div class="compact-list">${e.history.slice().reverse().map(h=>`<div class="compact-item">${h}</div>`).join("")}</div><div class="modal-actions"><button class="secondary" id="modalEval">Evaluate</button><button class="secondary" id="modalLeave">Place on Leave</button><button class="secondary" id="modalTransfer">Transfer</button><button class="secondary danger" id="modalResign">Process Resignation</button></div>`);
-  document.getElementById("modalEval").onclick=()=>{state.selectedEmployee=id;closeModal();evaluateSelected();};
-  document.getElementById("modalLeave").onclick=()=>{state.selectedEmployee=id;closeModal();openLeaveModal();};
-  document.getElementById("modalTransfer").onclick=()=>{state.selectedEmployee=id;closeModal();openTransferModal();};
-  document.getElementById("modalResign").onclick=()=>{processResignation(e);closeModal();};
+function teacherNeed(g){let n=state.students.filter(s=>s.status==="Active"&&s.grade===g).length;return Math.min(3,Math.max(1,Math.ceil(n/TARGETS[g])));}
+function roomSeverity(r){
+ if(r.status==="Out of Service")return "out";
+ if(r.condition<70||r.cleanliness<72||r.temp<65||r.temp>79||r.workOrders.some(id=>state.workOrders.find(w=>w.id===id&&w.status==="Open"&&w.priority==="High")))return "needs";
+ if(r.grade&&!teacherForRoom(r.id))return "vacant";
+ return "";
 }
 
-function openHireModal(preferTeacher=false){
-  showModal("Hire Employee",`<form id="hireForm"><div class="form-grid"><label>Category<select id="hireCategory"><option>Teacher</option><option>Administration</option><option>Specials</option><option>Special Education</option><option>Instructional Support</option><option>Student Services</option><option>Office</option><option>Operations</option><option>Cafeteria</option><option>Technology</option></select></label><label>Position<input id="hirePosition" value="Grade K Teacher"></label><label>Assignment<input id="hireAssignment" value="Grade K"></label><label>Degree<select id="hireDegree"><option>BA</option><option>MA</option><option>MA+30</option><option>AA</option><option>HS</option></select></label><label>License<input id="hireLicense" value="Elementary K-6"></label><label>Contract<select id="hireContract"><option>Probationary</option><option>Professional</option><option>Classified</option><option>Administrative</option></select></label><label>Age<input id="hireAge" type="number" min="21" max="70" value="28"></label><label>Experience<input id="hireExp" type="number" min="0" max="45" value="5"></label><label>Grade<select id="hireGrade"><option>K</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option><option value="">N/A</option></select></label><label>Room<select id="hireRoom"><option value="">Unassigned</option>${state.rooms.map(r=>`<option value="${r.id}">Room ${r.id} — Grade ${r.grade}</option>`).join("")}<option value="LIB">Library</option><option value="GYM">Gym</option><option value="MUSIC">Music</option><option value="ART">Art</option><option value="SPED">Special Education</option><option value="OFFICE">Office</option><option value="PRIN">Principal</option><option value="NURSE">Nurse</option><option value="COUNSEL">Counselor</option><option value="PSYCH">Psychologist</option><option value="CUST">Custodial</option><option value="CAF">Cafeteria</option><option value="TECH">Technology</option></select></label></div><div class="modal-actions"><button class="secondary" type="submit">Hire Applicant</button></div></form>`);
-  const cat=document.getElementById("hireCategory");if(!preferTeacher)cat.value="Operations";document.getElementById("hireForm").onsubmit=e=>{e.preventDefault();const category=cat.value,age=+document.getElementById("hireAge").value,exp=+document.getElementById("hireExp").value,degree=document.getElementById("hireDegree").value,grade=document.getElementById("hireGrade").value,contract=document.getElementById("hireContract").value,license=document.getElementById("hireLicense").value,room=document.getElementById("hireRoom").value||null,position=document.getElementById("hirePosition").value,assignment=document.getElementById("hireAssignment").value,name=employeeNames[rand(0,employeeNames.length-1)],lane=degree==="MA+30"?"MA30":degree==="MA"?"MA":"BA",salary=category==="Teacher"||category==="Specials"||category==="Special Education"?salaryFor(lane,exp):Math.max(30000,Math.round((38000+exp*1300+(degree==="BA"?5000:degree==="MA"?10000:0))/100)*100);state.employees.push({id:state.nextEmployeeId++,name,category,position,assignment,grade:category==="Teacher"?grade:null,room,age,experience:exp,degree,license,contract,salary,skill:rand(72,92),morale:90,status:"Active",leave:null,evaluation:null,history:[`${state.year}: Hired as ${position}`],yearsInDistrict:0});state.budget-=Math.round(salary*.08);logHr(`${name} hired as ${position}.`);assignStudentsToRooms();closeModal();renderAll();setMessage(`<strong>Hired:</strong> ${name} — ${position}, ${money(salary)}.`);};
+function render(){
+ updatePositionFill();
+ $("statusDate").textContent=`Day ${state.instructionalDay}/${state.maxInstructionalDays} • ${fmtDate(state.date)}`;
+ $("statusEnrollment").textContent=`${enrollment()} students`;
+ let present=activeEmployees().filter(e=>e.status!=="Absent"&&!e.leave).length;
+ $("statusStaff").textContent=`${present}/${activeEmployees().length}`;
+ $("statusAttendance").textContent=pct(state.metrics.attendance);
+ $("statusBudget").textContent=money(availableOperating());
+ $("statusBuilding").textContent=`${buildingScore()}%`;
+ $("unreadBadge").textContent=state.inbox.filter(m=>!m.read).length||"";
+ renderCommand();renderBuilding();renderStudents();renderStaff();renderHR();renderOperations();renderFinance();renderBoard();renderInbox();renderReports();
 }
-function hireGeneratedStaff(category,position,assignment,degree,license,contract,salary,room){const name=employeeNames[rand(0,employeeNames.length-1)];state.employees.push({id:state.nextEmployeeId++,name,category,position,assignment,grade:null,room,age:rand(24,50),experience:rand(2,18),degree,license,contract,salary,skill:rand(75,90),morale:90,status:"Active",leave:null,evaluation:null,history:[`${state.year}: Hired as ${position}`],yearsInDistrict:0});logHr(`${name} hired as ${position}.`);}
-
-function evaluateSelected(){const e=activeEmployees().find(x=>x.id===state.selectedEmployee);if(!e){setMessage("<strong>Evaluation:</strong> Select an employee first.");return;}const score=clamp(Math.round(e.skill*.75+e.morale*.25+rand(-5,5)),1,100);const rating=score>=90?"Highly Effective":score>=75?"Effective":score>=60?"Needs Improvement":"Ineffective";e.evaluation={year:state.year,score,rating};e.history.push(`${state.year}: Evaluation — ${rating} (${score}%)`);e.skill=clamp(e.skill+(score>=75?1:-1),45,100);logHr(`${e.name} evaluated ${rating} (${score}%).`);renderAll();setMessage(`<strong>Evaluation:</strong> ${e.name} — ${rating}, ${score}%.`);}
-
-function openLeaveModal(){const e=activeEmployees().find(x=>x.id===state.selectedEmployee);if(!e){setMessage("Select an employee first.");return;}showModal(`Leave — ${e.name}`,`<form id="leaveForm"><div class="form-grid"><label>Leave Type<select id="leaveType"><option>Maternity/Paternity Leave</option><option>FMLA</option><option>Medical Leave</option><option>Military Leave</option><option>Long-Term Leave</option></select></label><label>Return School Year<input id="leaveReturn" type="number" min="${state.year}" max="${state.year+3}" value="${state.year+1}"></label><label style="grid-column:1/-1">Reason<input id="leaveReason" value="Approved leave"></label></div><div class="modal-actions"><button class="secondary" type="submit">Approve Leave</button></div></form>`);document.getElementById("leaveForm").onsubmit=ev=>{ev.preventDefault();e.leave={type:document.getElementById("leaveType").value,returnYear:+document.getElementById("leaveReturn").value,reason:document.getElementById("leaveReason").value};e.status="On Leave";e.history.push(`${state.year}: Began ${e.leave.type}`);logHr(`${e.name} began ${e.leave.type}.`);assignStudentsToRooms();closeModal();renderAll();setMessage(`<strong>Leave approved:</strong> ${e.name} — ${e.leave.type}.`);};}
-
-function openTransferModal(){const e=activeEmployees().find(x=>x.id===state.selectedEmployee);if(!e){setMessage("Select an employee first.");return;}showModal(`Transfer — ${e.name}`,`<form id="transferForm"><div class="form-grid"><label>New Assignment<input id="transferAssignment" value="${e.assignment}"></label><label>New Room<select id="transferRoom"><option value="">Unassigned</option>${state.rooms.map(r=>`<option value="${r.id}">Room ${r.id} — Grade ${r.grade}</option>`).join("")}<option value="LIB">Library</option><option value="GYM">Gym</option><option value="MUSIC">Music</option><option value="ART">Art</option><option value="SPED">Special Education</option><option value="OFFICE">Office</option><option value="PRIN">Principal</option><option value="CUST">Custodial</option><option value="CAF">Cafeteria</option><option value="TECH">Technology</option></select></label>${e.category==="Teacher"?`<label>New Grade<select id="transferGrade">${GRADES.map(g=>`<option ${g===e.grade?"selected":""}>${g}</option>`).join("")}</select></label>`:""}</div><div class="modal-actions"><button class="secondary" type="submit">Complete Transfer</button></div></form>`);document.getElementById("transferRoom").value=e.room||"";document.getElementById("transferForm").onsubmit=ev=>{ev.preventDefault();const old=e.assignment;e.assignment=document.getElementById("transferAssignment").value;e.room=document.getElementById("transferRoom").value||null;if(e.category==="Teacher")e.grade=document.getElementById("transferGrade").value;e.morale=clamp(e.morale-2,0,100);e.history.push(`${state.year}: Transferred from ${old} to ${e.assignment}`);logHr(`${e.name} transferred to ${e.assignment}.`);assignStudentsToRooms();closeModal();renderAll();setMessage(`<strong>Transfer complete:</strong> ${e.name} → ${e.assignment}.`);};}
-function processResignation(e){e.status="Resigned";e.room=null;e.history.push(`${state.year}: Resigned`);logHr(`${e.name} resigned.`);assignStudentsToRooms();renderAll();setMessage(`<strong>Resignation processed:</strong> ${e.name}.`);}
-
-function openRoster(roomId){const r=state.rooms.find(x=>x.id===roomId);const students=roomRoster(roomId);const t=currentTeacherInRoom(r);showModal(`Room ${roomId} Roster`,`<p><strong>Grade ${r.grade}</strong> · ${t?t.name:"Vacant"} · ${students.length} students</p><div class="table-wrap"><table class="data-table"><thead><tr><th>Student</th><th>IEP</th><th>504</th><th>Attendance</th></tr></thead><tbody>${students.map(s=>`<tr><td>${s.name}</td><td>${s.iep?"Yes":""}</td><td>${s.plan504?"Yes":""}</td><td>${s.attendance}%</td></tr>`).join("")}</tbody></table></div>`);}
-
-function addStudent(){showModal("Enroll New Student",`<form id="studentForm"><div class="form-grid"><label>Grade<select id="newStudentGrade">${GRADES.map(g=>`<option>${g}</option>`).join("")}</select></label><label>IEP<select id="newStudentIep"><option value="no">No</option><option value="yes">Yes</option></select></label></div><div class="modal-actions"><button class="secondary" type="submit">Enroll Student</button></div></form>`);document.getElementById("studentForm").onsubmit=e=>{e.preventDefault();const g=document.getElementById("newStudentGrade").value,s=makeStudent(state,g);s.iep=document.getElementById("newStudentIep").value==="yes";state.students.push(s);syncEnrollmentFromStudents();assignStudentsToRooms();projectNext();closeModal();renderAll();setMessage(`<strong>New student enrolled:</strong> ${s.name}, Grade ${g}.`);};}
-
-function advanceYear(){
-  const oldEnroll={...state.enrollment}, graduating=state.students.filter(s=>s.status==="Active"&&s.grade==="6");graduating.forEach(s=>{s.status="Promoted Out";s.history.push(`${state.year}: Promoted to middle school`);});
-  const nextMap={K:"1",1:"2",2:"3",3:"4",4:"5",5:"6"};state.students.filter(s=>s.status==="Active").forEach(s=>{if(nextMap[s.grade]){s.grade=nextMap[s.grade];s.history.push(`${state.year+1}: Promoted to Grade ${s.grade}`);}});
-  const newK=state.projected.K;for(let i=0;i<newK;i++)state.students.push(makeStudent(state,"K"));
-  state.year++;
-  const retirees=[],resignations=[];
-  activeEmployees().forEach(e=>{
-    e.age++;e.experience++;e.yearsInDistrict++;e.salary=Math.round(e.salary*1.02);e.morale=clamp(e.morale+rand(-4,3),40,100);
-    if(e.leave && state.year>=e.leave.returnYear){e.history.push(`${state.year}: Returned from ${e.leave.type}`);logHr(`${e.name} returned from ${e.leave.type}.`);e.leave=null;e.status="Active";}
-    const retireChance=e.age>=68?70:e.age>=65?40:e.age>=62?18:e.age>=60?7:0;if(rand(1,100)<=retireChance){e.status="Retired";e.room=null;e.history.push(`${state.year}: Retired`);retirees.push(e);return;}
-    if(e.morale<55&&rand(1,100)<=18){e.status="Resigned";e.room=null;e.history.push(`${state.year}: Resigned`);resignations.push(e);}
-  });
-  syncEnrollmentFromStudents();assignStudentsToRooms();projectNext();state.budget+=Math.round(totalEnrollment()*3800);state.selectedEmployee=null;state.selectedRoom=null;
-  if(rand(1,100)<=55)generateBoardIssue();
-  const shortages=GRADES.filter(g=>teachersAssigned(g)<teacherNeed(g)),excess=GRADES.filter(g=>teachersAssigned(g)>teacherNeed(g));let text=`<strong>${state.year}–${state.year+1} begins:</strong> ${graduating.length} sixth graders moved to middle school and ${newK} kindergarten students entered.`;if(retirees.length)text+=` Retired: ${retirees.map(e=>e.name).join(", ")}.`;if(resignations.length)text+=` Resigned: ${resignations.map(e=>e.name).join(", ")}.`;if(shortages.length)text+=` Shortages in grades ${shortages.join(", ")}.`;if(excess.length)text+=` Excess staffing in grades ${excess.join(", ")}.`;setMessage(text);renderAll();saveGame(true);
+function renderCommand(){
+ $("briefingSub").textContent=`${state.weather.condition}, ${state.weather.temp}°F • Roads: ${state.weather.roads}`;
+ let absent=activeEmployees().filter(e=>e.status==="Absent").length, uncovered=state.coverage.filter(c=>c.status==="Uncovered").length;
+ let openWO=state.workOrders.filter(w=>w.status==="Open").length, apps=state.applications.filter(a=>!["Hired","Rejected","Withdrawn"].includes(a.status)).length;
+ $("briefingCards").innerHTML=[
+  ["Enrollment",enrollment(),`${state.students.filter(s=>s.attendance<90).length} attendance concerns`,""],
+  ["Staff Call-offs",absent,uncovered?`${uncovered} uncovered`:"Coverage stable",uncovered?"danger":absent?"warn":""],
+  ["Open Work Orders",openWO,state.workOrders.filter(w=>w.priority==="High"&&w.status==="Open").length+" high priority",openWO?"warn":""],
+  ["Active Applicants",apps,`${state.vacancies.filter(v=>v.status==="Open").length} posted vacancies`,""]
+ ].map(x=>`<div class="brief-card ${x[3]}"><span class="muted">${x[0]}</span><strong>${x[1]}</strong><small>${x[2]}</small></div>`).join("");
+ $("todaySchedule").innerHTML=state.schedule.map(x=>`<div class="time-row"><strong>${x.time}</strong><span>${x.item}</span></div>`).join("");
+ let alerts=[];
+ GRADES.forEach(g=>{let need=teacherNeed(g),filled=activeEmployees().filter(e=>e.category==="Teacher"&&e.assignment===`Grade ${g}`).length;if(filled<need)alerts.push({t:`Grade ${g} is below projected classroom staffing (${filled}/${need}).`,c:"danger"});});
+ if(uncovered)alerts.push({t:`${uncovered} staff absence${uncovered>1?"s are":" is"} currently uncovered.`,c:"danger"});
+ state.workOrders.filter(w=>w.status==="Open"&&w.priority==="High").forEach(w=>alerts.push({t:`High-priority work order: ${w.issue} (${w.roomId}).`,c:"danger"}));
+ state.positions.filter(p=>p.filled<p.authorized).slice(0,4).forEach(p=>alerts.push({t:`Authorized vacancy: ${p.role} (${p.filled}/${p.authorized} FTE filled).`,c:"warn"}));
+ if(!alerts.length)alerts=[{t:"No immediate operational issues. Continue normal school operations.",c:"good"}];
+ $("attentionList").innerHTML=alerts.slice(0,7).map(a=>`<div class="alert ${a.c}">${a.t}</div>`).join("");
+ $("snapshot").innerHTML=`<div class="inspector-grid">
+ <div class="inspector-stat"><span>Academics</span><strong>${state.metrics.academics}</strong></div><div class="inspector-stat"><span>Parent Sat.</span><strong>${state.metrics.parentSatisfaction}</strong></div>
+ <div class="inspector-stat"><span>Staff Morale</span><strong>${state.metrics.staffMorale}</strong></div><div class="inspector-stat"><span>Safety</span><strong>${state.metrics.safety}</strong></div>
+ </div><div class="compact-item"><strong>School Year:</strong> ${state.schoolYear}<br><strong>Capacity:</strong> 480<br><strong>Enrollment:</strong> ${enrollment()} (${Math.round(enrollment()/480*100)}%)</div>`;
+ $("recentActivity").innerHTML=(state.activity.length?state.activity:["School year opened."]).slice(0,8).map(x=>`<div class="compact-item">${x}</div>`).join("");
 }
 
-function saveGame(silent=false){state.lastSaved=new Date().toISOString();localStorage.setItem(SAVE_KEY,JSON.stringify(state));if(!silent)setMessage(`<strong>Game saved.</strong> Progress is stored in this browser.`);}
-function loadGame(){const raw=localStorage.getItem(SAVE_KEY);if(!raw){setMessage("<strong>No saved game found.</strong>");return;}try{state=JSON.parse(raw);renderAll();setMessage(`<strong>Game loaded.</strong> School year ${state.year}–${state.year+1}.`);}catch{setMessage("<strong>Save file could not be loaded.</strong>");}}
+function renderBuilding(){
+ const map=$("schoolMap"); map.innerHTML="";
+ for(const [id,name,type,col,row,w,h] of ROOM_LAYOUT){
+  let b=document.createElement(type==="circulation"?"div":"button");
+  b.className=`room-map ${type}`; b.style.gridColumn=`${col}/span ${w}`;b.style.gridRow=`${row}/span ${h}`;
+  if(type==="circulation"){b.innerHTML=`<span class="rname">${name}</span>`;map.appendChild(b);continue;}
+  const r=roomById(id); if(!r)continue; let sev=roomSeverity(r);if(sev)b.classList.add(sev);
+  let count=r.grade?studentsInRoom(id).length:null;
+  let meta=[];
+  if(r.grade&&state.settings.showCounts)meta.push(`${count}/${r.capacity} students`);
+  if(state.settings.showTemps)meta.push(`${r.temp}°F`);
+  if(state.settings.showCleaning)meta.push(`Clean ${r.cleanliness}%`);
+  let openW=r.workOrders.filter(x=>state.workOrders.find(w=>w.id===x&&w.status==="Open")).length;
+  b.innerHTML=`<span class="rid">${id}</span><span class="rname">${r.grade?`Grade ${r.grade}`:name}</span><span class="rmeta">${meta.join(" • ")||name}</span>${state.settings.showOrders&&openW?`<span class="work-badge">🔧 ${openW}</span>`:""}`;
+  b.addEventListener("click",()=>{state.selectedRoom=id;renderBuilding();});
+  map.appendChild(b);
+ }
+ $("capacityChip").textContent=`Enrollment ${enrollment()} / 480 • ${Math.round(enrollment()/480*100)}% utilized`;
+ renderRoomInspector();
+}
+function renderRoomInspector(){
+ let box=$("roomInspector"),id=state.selectedRoom;if(!id){box.innerHTML='<span class="muted">Select a room on the map.</span>';return;}
+ let r=roomById(id);if(!r){box.textContent="Room unavailable.";return;}let t=teacherForRoom(id),kids=studentsInRoom(id),orders=r.workOrders.map(x=>state.workOrders.find(w=>w.id===x)).filter(Boolean);
+ box.innerHTML=`<h3>${id} — ${r.name}${r.grade?` / Grade ${r.grade}`:""}</h3>
+ <div class="inspector-grid"><div class="inspector-stat"><span>Condition</span><strong>${r.condition}%</strong></div><div class="inspector-stat"><span>Cleanliness</span><strong>${r.cleanliness}%</strong></div><div class="inspector-stat"><span>Temperature</span><strong>${r.temp}°F</strong></div><div class="inspector-stat"><span>Status</span><strong>${r.status}</strong></div></div>
+ ${r.grade?`<div class="compact-item"><strong>${t?t.name:"Vacant classroom"}</strong><br>${kids.length}/${r.capacity} students${t?` • ${t.experience} yrs experience`:""}</div>`:""}
+ ${orders.length?orders.map(o=>`<div class="compact-item"><strong>${o.priority}:</strong> ${o.issue}<br>${o.status} • ${o.assigned}</div>`).join(""):"<p class='muted'>No room work orders.</p>"}
+ <div class="inspector-actions"><button class="secondary" id="inspectWO">Create Work Order</button>${r.grade?`<button class="secondary" id="inspectRoster">View Roster</button>`:""}</div>`;
+ $("inspectWO").onclick=()=>openWorkOrderModal(id);if($("inspectRoster"))$("inspectRoster").onclick=()=>openRoster(id);
+}
 
-function showModal(title,html){document.getElementById("modalTitle").textContent=title;document.getElementById("modalBody").innerHTML=html;document.getElementById("modal").classList.remove("hidden");}
-function closeModal(){document.getElementById("modal").classList.add("hidden");document.getElementById("modalBody").innerHTML="";}
+function renderStudents(){
+ let gf=$("studentGradeFilter");let cur=gf.value||"all";gf.innerHTML='<option value="all">All Grades</option>'+GRADES.map(g=>`<option value="${g}">Grade ${g}</option>`).join("");gf.value=GRADES.includes(cur)?cur:"all";
+ let grade=gf.value,need=$("studentNeedFilter").value,q=$("studentSearch").value.toLowerCase();
+ let list=state.students.filter(s=>s.status==="Active"&&(grade==="all"||s.grade===grade)&&(!q||`${s.first} ${s.last}`.toLowerCase().includes(q)||state.families.find(f=>f.id===s.familyId)?.name.toLowerCase().includes(q)));
+ if(need==="IEP")list=list.filter(s=>s.iep);if(need==="504")list=list.filter(s=>s.plan504);if(need==="ELL")list=list.filter(s=>s.ell);if(need==="Attendance")list=list.filter(s=>s.attendance<90);
+ $("studentTableBody").innerHTML=list.map(s=>{let f=state.families.find(x=>x.id===s.familyId),t=teacherForRoom(s.room),sup=[s.iep?"IEP":"",s.plan504?"504":"",s.ell?"ELL":""].filter(Boolean).join(", ")||"—";return`<tr><td><button class="link-btn" data-student="${s.id}">${s.first} ${s.last}</button></td><td>${s.grade}</td><td>${s.room||"—"}</td><td>${t?t.name:"—"}</td><td>${f?f.name:"—"}</td><td>${s.transport}</td><td>${sup}</td><td>${s.attendance}%</td><td>${s.reading}</td><td>${s.math}</td></tr>`}).join("");
+ document.querySelectorAll("[data-student]").forEach(b=>b.onclick=()=>openStudent(b.dataset.student));
+}
+function renderStaff(){
+ let cats=[...new Set(activeEmployees().map(e=>e.category))].sort(),cf=$("staffCategoryFilter"),cur=cf.value||"all";cf.innerHTML='<option value="all">All Categories</option>'+cats.map(c=>`<option>${c}</option>`).join("");cf.value=cats.includes(cur)?cur:"all";
+ let q=$("staffSearch").value.toLowerCase(),status=$("staffStatusFilter").value,cat=cf.value;
+ let list=activeEmployees().filter(e=>(cat==="all"||e.category===cat)&&(!q||e.name.toLowerCase().includes(q)||e.position.toLowerCase().includes(q)));
+ if(status==="Absent")list=list.filter(e=>e.status==="Absent");if(status==="Leave")list=list.filter(e=>e.leave);if(status==="Active")list=list.filter(e=>e.status==="Active"&&!e.leave);
+ $("staffTableBody").innerHTML=list.map(e=>`<tr><td><button class="link-btn" data-emp="${e.id}">${e.name}</button></td><td>${e.position}</td><td>${e.fte.toFixed(1)}</td><td>${e.assignment}</td><td>${e.schedule}</td><td>${e.experience} yrs</td><td>${e.degree}</td><td>${e.license}</td><td>${money(e.salary*e.fte)}</td><td>${e.leave?'<span class="badge warn">Leave</span>':e.status==="Absent"?'<span class="badge danger">Absent</span>':'<span class="badge good">Active</span>'}</td></tr>`).join("");
+ document.querySelectorAll("[data-emp]").forEach(b=>b.onclick=()=>openEmployee(b.dataset.emp));
+}
+function renderHR(){
+ $("positionControl").innerHTML=state.positions.map(p=>`<div class="position-row"><div><strong>${p.role}</strong><br><span class="muted">${p.category} • ${p.fte.toFixed(1)} FTE each</span></div><div><strong>${Number(p.filled).toFixed(1)} / ${p.authorized.toFixed(1)}</strong><br><span class="${p.filled<p.authorized?"badge warn":"badge good"}">${p.filled<p.authorized?"Vacancy":"Filled"}</span></div></div>`).join("");
+ $("vacancyBoard").innerHTML=state.vacancies.length?state.vacancies.map(v=>{let apps=state.applications.filter(a=>a.vacancyId===v.id);return`<div class="vacancy-card"><div class="vacancy-head"><div><strong>${v.title}</strong><br><span class="muted">${v.fte.toFixed(1)} FTE • Posted ${v.posted}</span></div><span class="badge ${v.status==="Open"?"info":"good"}">${v.status}</span></div><div class="actions">${v.status==="Open"?`<button class="secondary" data-vac="${v.id}" data-act="closeVac">Close Posting</button>`:""}<button class="secondary" data-vac="${v.id}" data-act="viewVac">View ${apps.length} Application${apps.length===1?"":"s"}</button></div>${apps.slice(0,4).map(a=>`<div class="applicant-mini"><button class="link-btn" data-app="${a.id}">${a.name}</button> • ${a.status} • ${a.experience} yrs</div>`).join("")}</div>`}).join(""):"<p class='muted'>No vacancies posted.</p>";
+ document.querySelectorAll("[data-app]").forEach(b=>b.onclick=()=>openApplication(b.dataset.app));
+ document.querySelectorAll("[data-vac]").forEach(b=>b.onclick=()=>b.dataset.act==="viewVac"?openVacancy(b.dataset.vac):closeVacancy(b.dataset.vac));
+ let leaves=activeEmployees().filter(e=>e.leave),licenseIssues=activeEmployees().filter(e=>e.category==="Teacher"&&!String(e.license).includes("Elementary"));
+ $("hrCompliance").innerHTML=`<div class="stat-grid"><div class="stat-box"><span>Employees on Leave</span><strong>${leaves.length}</strong></div><div class="stat-box"><span>License Alerts</span><strong>${licenseIssues.length}</strong></div><div class="stat-box"><span>Probationary Teachers</span><strong>${activeEmployees().filter(e=>e.contract==="Probationary").length}</strong></div><div class="stat-box"><span>Open Vacancies</span><strong>${state.vacancies.filter(v=>v.status==="Open").length}</strong></div></div>${leaves.map(e=>`<div class="compact-item"><strong>${e.name}</strong> — ${e.leave.type}, returns ${e.leave.returnDate}</div>`).join("")}`;
+ $("subPool").innerHTML=state.substitutes.map(s=>`<div class="position-row"><div><strong>${s.name}</strong><br><span class="muted">${s.qualified}</span></div><div>${s.reliability}% reliability<br><span class="badge ${s.status==="Available"?"good":"warn"}">${s.status}</span></div></div>`).join("");
+}
+function renderOperations(){
+ $("coverageBoard").innerHTML=state.absences.length?state.absences.map(a=>{let e=state.employees.find(x=>x.id===a.employeeId),c=state.coverage.find(x=>x.absenceId===a.id);return`<div class="order-card"><div class="order-head"><div><strong>${e?.name||"Employee"}</strong><br><span class="muted">${e?.position||""} • ${a.reason}</span></div><span class="badge ${c?.status==="Covered"?"good":"danger"}">${c?.status||"Uncovered"}</span></div>${c?.subName?`<div class="muted">Covered by ${c.subName}</div>`:""}${c?.status!=="Covered"?`<div class="actions"><button class="secondary" data-cover="${a.id}">Find Substitute</button></div>`:""}</div>`}).join(""):"<p class='muted'>No staff absences today.</p>";
+ document.querySelectorAll("[data-cover]").forEach(b=>b.onclick=()=>findSubForAbsence(b.dataset.cover));
+ $("workOrderBoard").innerHTML=state.workOrders.length?state.workOrders.slice().sort((a,b)=>(a.status===b.status?0:a.status==="Open"?-1:1)).map(w=>`<div class="order-card"><div class="order-head"><div><strong>${w.roomId} — ${w.issue}</strong><br><span class="muted">${w.assigned} • ${w.age} day(s) open</span></div><span class="badge ${w.priority==="High"?"danger":w.priority==="Medium"?"warn":"info"}">${w.priority}</span></div><div class="actions">${w.status==="Open"?`<button class="secondary" data-wo="${w.id}" data-woact="complete">Complete</button><button class="secondary" data-wo="${w.id}" data-woact="escalate">Escalate</button>`:`<span class="badge good">Completed</span>`}</div></div>`).join(""):"<p class='muted'>No work orders.</p>";
+ document.querySelectorAll("[data-wo]").forEach(b=>b.onclick=()=>manageWO(b.dataset.wo,b.dataset.woact));
+ let ieps=state.students.filter(s=>s.status==="Active"&&s.iep).length,ell=state.students.filter(s=>s.status==="Active"&&s.ell).length,att=state.students.filter(s=>s.status==="Active"&&s.attendance<90).length;
+ $("servicesBoard").innerHTML=`<div class="service-row"><strong>Special Education</strong><span>${ieps} students • ${(ieps/Math.max(1,activeEmployees().filter(e=>e.position==="Special Education Teacher").length)).toFixed(1)} per teacher</span></div><div class="service-row"><strong>School Counselor</strong><span>${att} attendance concerns</span></div><div class="service-row"><strong>ELL</strong><span>${ell} identified students</span></div><div class="service-row"><strong>Nurse</strong><span>${rnd(5,14)} average daily visits</span></div>`;
+ $("calendarBoard").innerHTML=`<div class="compact-item"><strong>${fmtDate(state.date)}</strong> — Instructional Day ${state.instructionalDay}</div><div class="compact-item">Sep 7 — Labor Day / No School</div><div class="compact-item">Oct 15–16 — Fall Break</div><div class="compact-item">Nov 24–26 — Thanksgiving Break</div><div class="compact-item">Dec 21–Jan 1 — Winter Break</div><div class="compact-item">Mar 29–Apr 2 — Spring Break</div>`;
+}
+function renderFinance(){
+ let p=payroll(),b=benefits(),rev=state.finance.stateRevenue+state.finance.localRevenue+state.finance.grants+state.finance.otherRevenue,avail=availableOperating();
+ $("financeKpis").innerHTML=[["Operating Budget",state.finance.operatingBudget],["Payroll",p],["Benefits",b],["Available",avail]].map(x=>`<div class="stat-box"><span>${x[0]}</span><strong>${money(x[1])}</strong></div>`).join("");
+ let items=[["Payroll",p],["Benefits",b],["Operations Spent",state.finance.spentOps],["Open POs",committedPO()]];
+ $("financeBars").innerHTML=items.map(([l,v])=>`<div class="bar-row"><div class="bar-label"><span>${l}</span><strong>${money(v)}</strong></div><div class="bar-track"><div class="bar-fill" style="width:${Math.min(100,v/state.finance.operatingBudget*100)}%"></div></div></div>`).join("");
+ let cats={};activeEmployees().forEach(e=>cats[e.category]=(cats[e.category]||0)+e.salary*e.fte);
+ $("payrollCategories").innerHTML=Object.entries(cats).sort((a,b)=>b[1]-a[1]).map(([c,v])=>`<div class="category-row"><span>${c}</span><strong>${money(v)}</strong></div>`).join("");
+ $("purchaseOrders").innerHTML=state.purchaseOrders.length?state.purchaseOrders.map(p=>`<div class="po-card"><strong>${p.vendor}</strong> — ${p.description}<br><span class="muted">${money(p.amount)} • ${p.account} • ${p.status}</span>${p.status!=="Closed"?`<div class="actions"><button class="secondary" data-po="${p.id}">Receive & Close</button></div>`:""}</div>`).join(""):"<p class='muted'>No purchase orders.</p>";
+ document.querySelectorAll("[data-po]").forEach(b=>b.onclick=()=>closePO(b.dataset.po));
+ let current=enrollment();$("forecastBoard").innerHTML=[1,2,3,4,5].map(y=>{let growth=state.neighborhoods.reduce((a,n)=>a+n.growth,0)/state.neighborhoods.length/100;let val=Math.round(current*Math.pow(1+growth,y));return`<div class="forecast-row"><span>${2026+y}–${String(27+y).slice(-2)}</span><strong>${val} students</strong><span>${val>480?"⚠️ Over capacity":val>450?"Near capacity":"Within capacity"}</span></div>`}).join("");
+}
+function renderBoard(){
+ if(!state.boardMembers)state.boardMembers=[
+  {name:"Karen Mitchell",priority:"Fiscal Responsibility",support:74},{name:"David Ross",priority:"Safety & Facilities",support:82},{name:"Monica Hayes",priority:"Employees & Retention",support:86},{name:"Eric Palmer",priority:"Families & Community",support:78},{name:"Susan Bennett",priority:"Growth & Planning",support:80}
+ ];
+ $("boardIssues").innerHTML=state.boardIssues.length?state.boardIssues.map(i=>`<div class="board-issue"><h3>${i.title}</h3><p>${i.description}</p><p><strong>Estimated impact:</strong> ${money(i.cost)}</p><div class="actions">${i.status==="Pending"?`<button class="secondary" data-board="${i.id}" data-rec="approve">Recommend Approval</button><button class="secondary" data-board="${i.id}" data-rec="deny">Recommend Denial</button>`:`<span class="badge ${i.status==="Approved"?"good":"danger"}">${i.status}</span>`}</div></div>`).join(""):"<p class='muted'>No pending agenda items.</p>";
+ document.querySelectorAll("[data-board]").forEach(b=>b.onclick=()=>voteBoard(b.dataset.board,b.dataset.rec));
+ $("boardMembers").innerHTML=state.boardMembers.map(m=>`<div class="board-member"><strong>${m.name}</strong><span>${m.priority}</span><span>${m.support}%</span></div>`).join("");
+ $("boardHistory").innerHTML=(state.boardHistory.length?state.boardHistory:["No votes yet."]).slice(0,10).map(x=>`<div class="compact-item">${x}</div>`).join("");
+}
+function renderInbox(){
+ let list=state.inbox.slice().sort((a,b)=>(a.read===b.read?0:a.read?1:-1));
+ $("inboxList").innerHTML=list.map(m=>`<div class="message-row ${m.read?"":"unread"}" data-msg="${m.id}"><div class="message-head"><span><i class="priority-dot ${m.priority}"></i><strong>${m.from}</strong></span><span class="muted">${m.read?"Read":"New"}</span></div><div class="subject">${m.subject}</div><div class="muted">${m.body.slice(0,95)}${m.body.length>95?"…":""}</div></div>`).join("");
+ document.querySelectorAll("[data-msg]").forEach(b=>b.onclick=()=>{state.selectedMessage=b.dataset.msg;let m=state.inbox.find(x=>x.id===state.selectedMessage);if(m)m.read=true;renderInbox();});
+ let m=state.inbox.find(x=>x.id===state.selectedMessage);$("messageDetail").innerHTML=m?`<h3>${m.subject}</h3><p><strong>From:</strong> ${m.from}</p><p>${m.body}</p><div class="actions">${(m.actions||[]).map(a=>`<button class="secondary" data-msgact="${a}">${a}</button>`).join("")}<button class="secondary" data-msgact="Archive">Archive</button></div>`:"<span class='muted'>Select a message.</span>";
+ document.querySelectorAll("[data-msgact]").forEach(b=>b.onclick=()=>handleMessageAction(b.dataset.msgact));
+ $("unreadBadge").textContent=state.inbox.filter(x=>!x.read).length||"";
+}
+function renderReports(){
+ let byGrade=GRADES.map(g=>[g,state.students.filter(s=>s.status==="Active"&&s.grade===g).length]);
+ let avgClass=avg(state.rooms.filter(r=>r.grade&&teacherForRoom(r.id)).map(r=>studentsInRoom(r.id).length)).toFixed(1);
+ $("reportGrid").innerHTML=[
+  ["Enrollment Report",byGrade.map(([g,n])=>`<div class="report-line"><span>Grade ${g}</span><strong>${n}</strong></div>`).join("")],
+  ["Class Size Report",`<div class="report-line"><span>Average</span><strong>${avgClass}</strong></div>${state.rooms.filter(r=>r.grade&&teacherForRoom(r.id)).map(r=>`<div class="report-line"><span>${r.id} / Grade ${r.grade}</span><strong>${studentsInRoom(r.id).length}/${r.capacity}</strong></div>`).join("")}`],
+  ["Staffing Report",`<div class="report-line"><span>Active Employees</span><strong>${activeEmployees().length}</strong></div><div class="report-line"><span>Absences Today</span><strong>${state.absences.length}</strong></div><div class="report-line"><span>Open Vacancies</span><strong>${state.vacancies.filter(v=>v.status==="Open").length}</strong></div>`],
+  ["Facilities Report",`<div class="report-line"><span>Building Score</span><strong>${buildingScore()}%</strong></div><div class="report-line"><span>Open Work Orders</span><strong>${state.workOrders.filter(w=>w.status==="Open").length}</strong></div><div class="report-line"><span>High Priority</span><strong>${state.workOrders.filter(w=>w.status==="Open"&&w.priority==="High").length}</strong></div>`],
+  ["Attendance Report",`<div class="report-line"><span>School Attendance</span><strong>${pct(state.metrics.attendance)}</strong></div><div class="report-line"><span>Chronic Concerns</span><strong>${state.students.filter(s=>s.attendance<90).length}</strong></div>`],
+  ["Budget Report",`<div class="report-line"><span>Payroll</span><strong>${money(payroll())}</strong></div><div class="report-line"><span>Benefits</span><strong>${money(benefits())}</strong></div><div class="report-line"><span>Committed POs</span><strong>${money(committedPO())}</strong></div><div class="report-line"><span>Available</span><strong>${money(availableOperating())}</strong></div>`]
+ ].map(([h,c])=>`<div class="report-card"><h3>${h}</h3>${c}</div>`).join("");
+}
 
-// Event wiring
-GRADES.forEach(g=>{});
-document.querySelectorAll("[data-special-room]").forEach(b=>b.addEventListener("click",()=>handleSpecialClick(b.dataset.specialRoom)));
-document.querySelectorAll(".nav-btn").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll(".nav-btn").forEach(x=>x.classList.remove("active"));b.classList.add("active");document.querySelectorAll(".view").forEach(v=>v.classList.remove("active-view"));document.getElementById(`view-${b.dataset.view}`).classList.add("active-view");renderAll();}));
-document.getElementById("assignStaffSelect").addEventListener("change",e=>{state.selectedEmployee=e.target.value?Number(e.target.value):null;const emp=activeEmployees().find(x=>x.id===state.selectedEmployee);if(emp)setMessage(`<strong>${emp.name} selected.</strong> ${emp.position} · age ${emp.age} · ${emp.experience} yrs experience.`);});
-document.getElementById("clearSelectionBtn").onclick=()=>{state.selectedEmployee=null;renderAssignSelect();setMessage("Selection cleared.");};
-document.getElementById("hireTeacherBtn").onclick=()=>openHireModal(true);document.getElementById("staffHireTeacherBtn").onclick=()=>openHireModal(true);document.getElementById("hireStaffBtn").onclick=()=>openHireModal(false);document.getElementById("staffHireOtherBtn").onclick=()=>openHireModal(false);document.getElementById("evaluateBtn").onclick=evaluateSelected;document.getElementById("leaveBtn").onclick=openLeaveModal;document.getElementById("transferBtn").onclick=openTransferModal;document.getElementById("rosterBtn").onclick=()=>{if(state.selectedRoom&&state.rooms.some(r=>r.id===state.selectedRoom))openRoster(state.selectedRoom);else setMessage("Select a classroom first.");};
-document.getElementById("saveBtn").onclick=()=>saveGame(false);document.getElementById("loadBtn").onclick=loadGame;document.getElementById("advanceYearBtn").onclick=advanceYear;document.getElementById("modalClose").onclick=closeModal;document.getElementById("modal").addEventListener("click",e=>{if(e.target.id==="modal")closeModal();});
-document.getElementById("staffCategoryFilter").onchange=renderStaffView;document.getElementById("staffSearch").oninput=renderStaffView;document.getElementById("studentGradeFilter").onchange=renderStudentsView;document.getElementById("studentRoomFilter").onchange=renderStudentsView;document.getElementById("studentSearch").oninput=renderStudentsView;document.getElementById("generateStudentBtn").onclick=addStudent;document.getElementById("newBoardIssueBtn").onclick=()=>{generateBoardIssue();renderBoardView();};document.getElementById("proposeRaiseBtn").onclick=()=>{const pct=clamp(Number(document.getElementById("raisePercent").value)||0,0,10);state.boardIssues.push({id:Date.now()+rand(1,9999),title:`${pct}% Salary Increase`,description:`Approve a ${pct}% salary increase for all active employees.`,cost:Math.round(payroll()*pct/100),effect:"raise",percent:pct});renderBoardView();setMessage(`<strong>Board agenda:</strong> ${pct}% salary increase proposal added.`);};
+function simulateCalloffs(){
+ activeEmployees().forEach(e=>{if(e.status==="Absent")e.status="Active";});state.absences=[];state.coverage=[];state.substitutes.forEach(s=>s.status="Available");
+ let eligible=activeEmployees().filter(e=>!e.leave&&e.category!=="Administration");
+ let count=Math.random()<.25?rnd(2,5):rnd(0,2);
+ eligible.sort(()=>Math.random()-.5).slice(0,count).forEach(e=>{e.status="Absent";let a={id:uid("abs"),employeeId:e.id,reason:pick(["Illness","Family illness","Personal day","Medical appointment","Emergency"]),date:state.date};state.absences.push(a);state.coverage.push({absenceId:a.id,status:"Uncovered",subName:null});});
+ state.absences.forEach(a=>autoCover(a.id));
+ log(`Morning call-off process completed: ${state.absences.length} absence(s).`);
+ render();
+}
+function autoCover(absId){
+ let a=state.absences.find(x=>x.id===absId),e=state.employees.find(x=>x.id===a?.employeeId),c=state.coverage.find(x=>x.absenceId===absId);if(!a||!e||!c)return;
+ let candidates=state.substitutes.filter(s=>s.status==="Available"&&(e.category==="Teacher"?s.qualified.includes("Elementary"):true)).sort((x,y)=>y.reliability-x.reliability);
+ if(candidates.length&&Math.random()<.82){let s=candidates[0];s.status="Assigned";c.status="Covered";c.subName=s.name;}
+}
+function findSubForAbsence(id){autoCover(id);render();let c=state.coverage.find(x=>x.absenceId===id);toast(c?.status==="Covered"?`Coverage found: ${c.subName}`:"No substitute accepted the assignment.");}
 
-renderAll();
+function advanceDay(){
+ runRecruitingPipeline();
+ progressWorkOrders();
+ state.students.forEach(s=>{if(Math.random()<.04)s.attendance=clamp(s.attendance-rnd(0,1),70,100);});
+ maybeMidyearEnrollment();
+ let d=new Date(`${state.date}T12:00:00`);do{d.setDate(d.getDate()+1)}while(d.getDay()===0||d.getDay()===6);
+ state.date=iso(d);state.instructionalDay++;activeEmployees().forEach(e=>{if(e.leave&&e.leave.returnDate<=state.date){e.history.unshift(`${state.date}: Returned from ${e.leave.type}`);e.leave=null;}});
+ state.metrics.attendance=clamp(94.2+Math.random()*2.8,90,99);
+ state.rooms.forEach(r=>{r.cleanliness=clamp(r.cleanliness-rnd(0,2),60,100);if(Math.random()<.1)r.temp=clamp(r.temp+rnd(-2,2),64,82);});
+ if(Math.random()<.25)simulateRandomWorkOrder();
+ if(Math.random()<.18)generateInboxEvent();
+ state.absences=[];state.coverage=[];activeEmployees().forEach(e=>{if(e.status==="Absent")e.status="Active";});state.substitutes.forEach(s=>s.status="Available");
+ simulateCalloffs();
+ if(state.instructionalDay>state.maxInstructionalDays)endSchoolYear();
+ save(true);render();
+}
+function runSchoolDay(){
+ let absent=state.absences.length,uncovered=state.coverage.filter(c=>c.status==="Uncovered").length;
+ let incidents=rnd(0,3),nurse=rnd(4,14),caf=enrollment()-rnd(35,90);
+ state.finance.spentOps+=rnd(900,1800);
+ state.rooms.forEach(r=>{if(r.type!=="facility")r.cleanliness=clamp(r.cleanliness-rnd(0,1),60,100)});
+ state.metrics.staffMorale=clamp(state.metrics.staffMorale-(uncovered?1:0)+(.2),55,100);
+ log(`School day completed: ${absent} staff absence(s), ${incidents} office referral(s), ${nurse} nurse visit(s), ${caf} lunches served.`);
+ state.inbox.unshift(msg("Daily Operations","End-of-day summary",`${incidents} office referrals, ${nurse} nurse visits, ${caf} lunches served, and ${uncovered} uncovered staff assignment(s) were recorded today.`,"low",["Acknowledge"]));
+ toast("School day completed. End-of-day report added to Inbox.");render();
+}
+function runRecruitingPipeline(){
+ state.vacancies.filter(v=>v.status==="Open").forEach(v=>{
+  if(Math.random()<.55 && state.applications.filter(a=>a.vacancyId===v.id).length<9)state.applications.push(generateApplication(v));
+ });
+ state.applications.forEach(a=>{
+  if(a.status==="Offer Pending"){a.offerDays=(a.offerDays||0)+1;if(a.offerDays>=1){let accept=Math.random()<.78;a.status=accept?"Offer Accepted":"Offer Declined";state.inbox.unshift(msg("HR",`${a.name} ${accept?"accepted":"declined"} offer`,`${a.name} has ${accept?"accepted":"declined"} the offer for ${a.position}.`,"medium",accept?["Begin Onboarding"]:["Reopen Search"]));}}
+  else if(a.status==="Onboarding"){a.onboardingDays=(a.onboardingDays||0)+1;if(a.onboardingDays>=3)finalizeHire(a);}
+ });
+}
+function generateApplication(v){
+ let exp=rnd(0,22),degree=pick(["BA","BA","MA","MA","MA+30"]),teacher=v.category==="Teacher",license=teacher?(Math.random()<.9?"Elementary K-6":"Emergency Permit / Pending"):(v.title.includes("Para")?"Paraeducator":v.title.includes("Custodian")?"N/A":v.title.includes("Cafeteria")?"Food Safety":"Applicable");
+ return{id:uid("app"),vacancyId:v.id,name:pick(staffNames.filter(n=>!state.employees.some(e=>e.name===n))),position:v.title,experience:exp,degree,license,currentEmployer:pick(["Jefferson Elementary","Maple Ridge Schools","Lakeside Community Schools","New Graduate","Private School","Out of District"]),references:[`${pick(firstNames)} ${pick(lastNames)} — Supervisor`,`${pick(firstNames)} ${pick(lastNames)} — Colleague`],answers:{why:"I am seeking a school community where collaboration, student growth, and strong family relationships are priorities.",challenge:"I use clear routines, data, and communication to address problems early and adjust support when needed.",team:"I value shared planning, honest feedback, and following through on commitments."},status:"Applied",interviewScore:null,referenceScore:null,offerDays:0,onboardingDays:0,applied:state.date};
+}
+function postVacancyModal(){
+ updatePositionFill();let available=state.positions.filter(p=>p.filled<p.authorized);
+ openModal("Post Authorized Vacancy",`<form id="vacancyForm"><div class="form-grid"><label class="full">Authorized Position<select id="vacancyPosition" required>${available.length?available.map(p=>`<option value="${p.id}">${p.role} — ${p.filled}/${p.authorized} filled</option>`).join(""):'<option value="">No authorized vacancies</option>'}</select></label><label>Posting Length<select id="postingDays"><option value="5">5 school days</option><option value="10">10 school days</option><option value="15">15 school days</option></select></label><label>Internal applicants<select id="allowInternal"><option>Allowed</option><option>External only</option></select></label></div><div class="actions"><button class="primary" type="submit" ${available.length?"":"disabled"}>Post Vacancy</button></div></form>`);
+ if(available.length)$("vacancyForm").onsubmit=e=>{e.preventDefault();let p=state.positions.find(x=>x.id===$("vacancyPosition").value);let v={id:uid("vac"),positionId:p.id,title:p.role,category:p.category,fte:p.fte,posted:state.date,status:"Open",postingDays:+$("postingDays").value,internal:$("allowInternal").value};state.vacancies.push(v);for(let i=0;i<rnd(1,3);i++)state.applications.push(generateApplication(v));state.inbox.unshift(msg("HR","Vacancy posted",`${v.title} has been posted. Applications will arrive over the next several school days.`,"low",["Open HR"]));log(`Posted vacancy: ${v.title}.`);closeModal();render();};
+}
+function openVacancy(id){let v=state.vacancies.find(x=>x.id===id),apps=state.applications.filter(a=>a.vacancyId===id);openModal(v.title,`<p><strong>Status:</strong> ${v.status} • <strong>Posted:</strong> ${v.posted}</p><h3>Applications (${apps.length})</h3>${apps.length?apps.map(a=>`<div class="position-row"><div><button class="link-btn" data-modalapp="${a.id}">${a.name}</button><br><span class="muted">${a.degree} • ${a.license} • ${a.experience} yrs</span></div><span class="badge info">${a.status}</span></div>`).join(""):"<p class='muted'>No applications yet.</p>"}`);document.querySelectorAll("[data-modalapp]").forEach(b=>b.onclick=()=>openApplication(b.dataset.modalapp));}
+function openApplication(id){
+ let a=state.applications.find(x=>x.id===id);if(!a)return;
+ openModal(`Application — ${a.name}`,`<div class="app-sheet"><h3>${a.name}</h3><div>${a.position} • Applied ${a.applied}</div><div class="app-section"><strong>Education & Qualifications</strong><p>${a.degree} • ${a.license}<br>${a.experience} years experience<br>Current: ${a.currentEmployer}</p></div><div class="app-section"><strong>Application Questions</strong><p><b>Why Lincoln?</b><br>${a.answers.why}</p><p><b>Handling challenges</b><br>${a.answers.challenge}</p><p><b>Teamwork</b><br>${a.answers.team}</p></div><div class="app-section"><strong>References</strong><p>${a.references.join("<br>")}</p></div><div class="app-section"><strong>Current Stage</strong><p>${a.status}${a.interviewScore!=null?` • Interview ${a.interviewScore}/100`:""}${a.referenceScore!=null?` • References ${a.referenceScore}/100`:""}</p></div></div><div class="actions">${a.status==="Applied"?`<button class="primary" data-appaction="interview">Interview</button>`:""}${a.status==="Interviewed"?`<button class="secondary" data-appaction="refs">Check References</button>`:""}${a.status==="References Complete"?`<button class="primary" data-appaction="offer">Make Offer</button>`:""}${a.status==="Offer Accepted"?`<button class="primary" data-appaction="onboard">Begin Onboarding</button>`:""}${!["Hired","Rejected","Withdrawn"].includes(a.status)?`<button class="secondary" data-appaction="reject">Reject</button>`:""}</div>`);
+ document.querySelectorAll("[data-appaction]").forEach(b=>b.onclick=()=>applicationAction(a,b.dataset.appaction));
+}
+function applicationAction(a,act){
+ if(act==="interview"){a.interviewScore=rnd(68,98);a.status="Interviewed";log(`Interviewed ${a.name} for ${a.position}.`);}
+ if(act==="refs"){a.referenceScore=rnd(70,99);a.status="References Complete";log(`Completed reference checks for ${a.name}.`);}
+ if(act==="offer"){a.status="Offer Pending";a.offerDays=0;state.inbox.unshift(msg("HR","Offer sent",`An employment offer has been sent to ${a.name} for ${a.position}.`,"medium",["Acknowledge"]));}
+ if(act==="onboard"){a.status="Onboarding";a.onboardingDays=0;}
+ if(act==="reject"){a.status="Rejected";}
+ closeModal();render();
+}
+function finalizeHire(a){
+ if(a.status==="Hired")return;let v=state.vacancies.find(x=>x.id===a.vacancyId);if(!v)return;
+ let p=state.positions.find(x=>x.id===v.positionId),employee;
+ if(v.category==="Teacher"){let g=v.title.match(/Grade (.+) Teacher/)?.[1]||"3";let room=Object.entries(classroomGradeByRoom).find(([rid,rg])=>rg===g&&!teacherForRoom(rid))?.[0]||null;employee=makeTeacher(a.name,g,room,a.experience,a.degree);}
+ else{let room=v.title.includes("Custodian")?"CUST":v.title.includes("Cafeteria")?"CAF":v.title.includes("Para")?"SPED":v.title.includes("Technology")?"TECH":null;employee=makeEmployee(a.name,p.category,v.title,p.category,room,a.experience,a.degree,a.license,p.fte,"7:30 AM–3:15 PM",v.title.includes("Para")?34000:v.title.includes("Custodian")?39500:v.title.includes("Cafeteria")?31500:52000);}
+ employee.history.unshift(`${state.schoolYear}: Hired from application ${a.id}`);state.employees.push(employee);a.status="Hired";v.status="Filled";assignStudents(state);updatePositionFill();state.inbox.unshift(msg("HR","Onboarding complete",`${a.name} is now active as ${v.title}.`,"low",["Acknowledge"]));log(`${a.name} completed onboarding and started as ${v.title}.`);
+}
+function closeVacancy(id){let v=state.vacancies.find(x=>x.id===id);if(v)v.status="Closed";render();}
+
+function openEmployee(id){let e=state.employees.find(x=>x.id===id);if(!e)return;openModal(e.name,`<div class="app-sheet"><h3>${e.position}</h3><p>${e.assignment} • ${e.fte.toFixed(1)} FTE • ${e.schedule}</p><div class="app-section"><strong>Personnel Profile</strong><p>Age ${e.age} • ${e.experience} yrs experience • ${e.yearsInDistrict} yrs in district<br>${e.degree} • ${e.license}<br>${e.contract} contract • ${money(e.salary*e.fte)}</p></div><div class="app-section"><strong>Performance & Morale</strong><p>Performance ${e.performance}/100 • Morale ${e.morale}/100</p></div><div class="app-section"><strong>Personnel History</strong>${e.history.map(h=>`<div>${h}</div>`).join("")}</div><div class="app-section"><strong>Assigned Property</strong><p>${e.equipment.join(", ")}</p></div></div><div class="actions"><button class="secondary" data-eact="eval">Record Walkthrough/Evaluation</button><button class="secondary" data-eact="leave">Add Leave</button><button class="secondary" data-eact="transfer">Transfer Assignment</button></div>`);document.querySelectorAll("[data-eact]").forEach(b=>b.onclick=()=>employeeAction(e,b.dataset.eact));}
+function employeeAction(e,act){
+ if(act==="eval"){let score=rnd(72,98);e.performance=Math.round((e.performance+score)/2);e.history.unshift(`${state.date}: Evaluation recorded — ${score}/100`);toast(`Evaluation recorded: ${score}/100`);}
+ if(act==="leave"){openModal(`Leave — ${e.name}`,`<form id="leaveForm"><div class="form-grid"><label>Leave Type<select id="leaveType"><option>FMLA</option><option>Maternity/Paternity</option><option>Medical</option><option>Military</option><option>Long-term Leave</option></select></label><label>Return Date<input id="returnDate" type="date" value="${state.date}"></label></div><div class="actions"><button class="primary">Approve Leave</button></div></form>`);$("leaveForm").onsubmit=x=>{x.preventDefault();e.leave={type:$("leaveType").value,returnDate:$("returnDate").value};e.history.unshift(`${state.date}: ${e.leave.type} began`);closeModal();render();};return;}
+ if(act==="transfer"&&e.category==="Teacher"){let rooms=Object.entries(classroomGradeByRoom).filter(([rid,g])=>!teacherForRoom(rid)||rid===e.room);openModal(`Transfer — ${e.name}`,`<form id="transferForm"><label>New classroom<select id="newRoom">${rooms.map(([rid,g])=>`<option value="${rid}">${rid} — Grade ${g}</option>`).join("")}</select></label><div class="actions"><button class="primary">Transfer</button></div></form>`);$("transferForm").onsubmit=x=>{x.preventDefault();let rid=$("newRoom").value,g=classroomGradeByRoom[rid];e.room=rid;e.assignment=`Grade ${g}`;e.position=`Grade ${g} Teacher`;e.history.unshift(`${state.date}: Transferred to Grade ${g}, Room ${rid}`);assignStudents(state);closeModal();render();};return;}
+ closeModal();render();
+}
+function openStudent(id){let s=state.students.find(x=>x.id===id),f=state.families.find(x=>x.id===s?.familyId);if(!s)return;openModal(`${s.first} ${s.last}`,`<div class="app-sheet"><h3>Student Record</h3><p>Grade ${s.grade} • Room ${s.room||"Unassigned"} • ${s.transport}</p><div class="app-section"><strong>Family</strong><p>${f?.name||"—"} • ${f?.addressZone||"—"}<br>Engagement: ${f?.engagement||"—"}</p></div><div class="app-section"><strong>Supports</strong><p>${[s.iep?"IEP":"",s.plan504?"504 Plan":"",s.ell?"ELL":""].filter(Boolean).join(", ")||"None listed"}</p></div><div class="app-section"><strong>Current Indicators</strong><p>Attendance ${s.attendance}% • Reading ${s.reading} • Math ${s.math}</p></div><div class="app-section"><strong>History</strong>${s.history.map(h=>`<div>${h}</div>`).join("")}</div></div>`);}
+function openRoster(roomId){let r=roomById(roomId),kids=studentsInRoom(roomId);openModal(`Roster — Room ${roomId}`,`<p>${teacherForRoom(roomId)?.name||"Vacant"} • ${kids.length}/${r?.capacity||"—"} students</p><div class="table-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Supports</th><th>Attendance</th><th>Reading</th><th>Math</th></tr></thead><tbody>${kids.map(s=>`<tr><td>${s.first} ${s.last}</td><td>${[s.iep?"IEP":"",s.plan504?"504":"",s.ell?"ELL":""].filter(Boolean).join(", ")||"—"}</td><td>${s.attendance}%</td><td>${s.reading}</td><td>${s.math}</td></tr>`).join("")}</tbody></table></div>`);}
+
+function openEnrollFamily(){
+ openModal("Enroll New Family",`<form id="enrollForm"><div class="form-grid"><label>Family Last Name<input id="familyLast" value="${pick(lastNames)}" required></label><label>Neighborhood<select id="familyZone">${state.neighborhoods.map(n=>`<option>${n.name}</option>`).join("")}</select></label><label>Student First Name<input id="studentFirst" value="${pick(firstNames)}" required></label><label>Grade<select id="studentGrade">${GRADES.map(g=>`<option>${g}</option>`).join("")}</select></label><label>Transportation<select id="studentTransport"><option>Bus</option><option>Car rider</option><option>Walker</option><option>Daycare</option></select></label><label>Supports<select id="studentSupport"><option>None</option><option>IEP</option><option>504</option><option>ELL</option></select></label></div><div class="actions"><button class="primary">Complete Enrollment</button></div></form>`);
+ $("enrollForm").onsubmit=e=>{e.preventDefault();let ln=$("familyLast").value.trim(),f={id:uid("fam"),name:`${ln} Family`,lastName:ln,engagement:"Typical",addressZone:$("familyZone").value,phone:`555-${rnd(200,999)}-${rnd(1000,9999)}`,history:[`${state.date}: Enrolled at Lincoln`]};state.families.push(f);let sup=$("studentSupport").value,s={id:uid("stu"),first:$("studentFirst").value.trim(),last:ln,grade:$("studentGrade").value,room:null,familyId:f.id,transport:$("studentTransport").value,iep:sup==="IEP",plan504:sup==="504",ell:sup==="ELL",attendance:100,reading:rnd(55,90),math:rnd(55,90),status:"Active",history:[`${state.date}: Enrolled in Grade ${$("studentGrade").value}`]};state.students.push(s);assignStudents(state);state.inbox.unshift(msg("Office","New enrollment completed",`${s.first} ${s.last} enrolled in Grade ${s.grade}. Classroom placement has been updated.`,"low",["Acknowledge"]));log(`New family enrolled: ${f.name}.`);closeModal();render();};
+}
+function maybeMidyearEnrollment(){if(Math.random()<.12){let g=pick(GRADES),ln=pick(lastNames),f={id:uid("fam"),name:`${ln} Family`,lastName:ln,engagement:pick(["High","Typical","Low"]),addressZone:pick(state.neighborhoods).name,phone:"555-555-0101",history:[`${state.date}: Moved into district`]};state.families.push(f);let s={id:uid("stu"),first:pick(firstNames),last:ln,grade:g,room:null,familyId:f.id,transport:pick(["Bus","Car rider","Walker"]),iep:Math.random()<.14,plan504:Math.random()<.06,ell:Math.random()<.06,attendance:rnd(92,100),reading:rnd(50,92),math:rnd(50,92),status:"Active",history:[`${state.date}: Midyear enrollment in Grade ${g}`]};state.students.push(s);assignStudents(state);state.inbox.unshift(msg("Office","Midyear enrollment",`${s.first} ${s.last} enrolled in Grade ${g} from ${f.addressZone}.`,"medium",["Review Placement"]));}}
+
+function openWorkOrderModal(roomId=null){
+ openModal("Create Work Order",`<form id="woForm"><div class="form-grid"><label>Room<select id="woRoom">${state.rooms.map(r=>`<option value="${r.id}" ${r.id===roomId?"selected":""}>${r.id} — ${r.name}</option>`).join("")}</select></label><label>Priority<select id="woPriority"><option>Low</option><option selected>Medium</option><option>High</option></select></label><label class="full">Issue<textarea id="woIssue" rows="3" required placeholder="Describe the problem..."></textarea></label></div><div class="actions"><button class="primary">Submit Work Order</button></div></form>`);
+ $("woForm").onsubmit=e=>{e.preventDefault();let w=workOrder($("woRoom").value,$("woIssue").value.trim(),$("woPriority").value);state.workOrders.push(w);roomById(w.roomId)?.workOrders.push(w.id);log(`Work order opened for ${w.roomId}: ${w.issue}`);closeModal();render();};
+}
+function simulateRandomWorkOrder(){let r=pick(state.rooms),issues=["HVAC not maintaining setpoint","Ceiling tile stained after rain","Interactive display not powering on","Door hardware loose","Sink/faucet leaking","Flooring transition lifting","Outlet not working","Light fixture out"];let w=workOrder(r.id,pick(issues),Math.random()<.12?"High":Math.random()<.5?"Medium":"Low");state.workOrders.push(w);r.workOrders.push(w.id);state.inbox.unshift(msg("Facilities",`${w.priority}-priority work order — ${r.id}`,w.issue,w.priority==="High"?"high":"medium",["Open Operations"]));}
+function progressWorkOrders(){state.workOrders.forEach(w=>{if(w.status==="Open"){w.age++;if(w.priority==="Low"&&Math.random()<.28||w.priority==="Medium"&&Math.random()<.18){w.status="Completed";let r=roomById(w.roomId);if(r){r.condition=clamp(r.condition+rnd(1,4),0,100);r.cleanliness=clamp(r.cleanliness+rnd(0,3),0,100);}}}});}
+function manageWO(id,act){let w=state.workOrders.find(x=>x.id===id);if(!w)return;if(act==="complete"){w.status="Completed";let r=roomById(w.roomId);if(r){r.condition=clamp(r.condition+5,0,100);r.cleanliness=clamp(r.cleanliness+4,0,100);}log(`Work order completed: ${w.issue}.`);}if(act==="escalate"){w.priority="High";w.assigned="District Maintenance";}render();}
+
+function createPO(){
+ openModal("Create Purchase Order",`<form id="poForm"><div class="form-grid"><label>Vendor<input id="poVendor" value="School Supply Co." required></label><label>Account<select id="poAccount"><option>Instruction</option><option>Technology</option><option>Facilities</option><option>Office</option><option>Professional Development</option></select></label><label class="full">Description<input id="poDesc" required placeholder="Items / services"></label><label>Amount<input id="poAmount" type="number" min="1" value="2500" required></label></div><div class="actions"><button class="primary">Create PO</button></div></form>`);
+ $("poForm").onsubmit=e=>{e.preventDefault();let amt=+$("poAmount").value;if(amt>availableOperating())return alert("Insufficient available operating funds.");state.purchaseOrders.push({id:uid("po"),vendor:$("poVendor").value,description:$("poDesc").value,account:$("poAccount").value,amount:amt,status:"Open",date:state.date});log(`Purchase order created for ${money(amt)}.`);closeModal();render();};
+}
+function closePO(id){let p=state.purchaseOrders.find(x=>x.id===id);if(p&&p.status!=="Closed"){p.status="Closed";state.finance.spentOps+=p.amount;log(`PO received and closed: ${p.vendor} ${money(p.amount)}.`);}render();}
+
+function requestFTE(){
+ openModal("Request Additional FTE",`<form id="fteForm"><div class="form-grid"><label>Position<select id="ftePos">${state.positions.map(p=>`<option value="${p.id}">${p.role}</option>`).join("")}</select></label><label>Additional FTE<input id="fteAmt" type="number" min=".2" max="2" step=".2" value="1"></label><label class="full">Justification<textarea id="fteWhy" rows="3">Enrollment, caseload, workload, and service demands support the requested staffing level.</textarea></label></div><div class="actions"><button class="primary">Send to Board/District</button></div></form>`);
+ $("fteForm").onsubmit=e=>{e.preventDefault();let p=state.positions.find(x=>x.id===$("ftePos").value),amt=+$("fteAmt").value;state.boardIssues.push({id:uid("board"),title:`Authorize ${amt.toFixed(1)} FTE — ${p.role}`,description:$("fteWhy").value,cost:Math.round((p.category==="Teacher"?60000:40000)*amt),status:"Pending",effect:{type:"fte",positionId:p.id,amount:amt}});closeModal();render();};
+}
+function addBoardIssue(){
+ openModal("Add Board Agenda Item",`<form id="boardForm"><div class="form-grid"><label>Request Type<select id="boardType"><option>Salary Increase</option><option>Capital Project</option><option>Program Expansion</option></select></label><label>Estimated Cost<input id="boardCost" type="number" value="75000"></label><label class="full">Title<input id="boardTitle" value="School Improvement Request"></label><label class="full">Description<textarea id="boardDesc" rows="3">Request approval based on student, staffing, and operational needs.</textarea></label></div><div class="actions"><button class="primary">Add to Agenda</button></div></form>`);
+ $("boardForm").onsubmit=e=>{e.preventDefault();state.boardIssues.push({id:uid("board"),title:$("boardTitle").value,description:$("boardDesc").value,cost:+$("boardCost").value,status:"Pending",effect:{type:$("boardType").value}});closeModal();render();};
+}
+function voteBoard(id,rec){
+ let i=state.boardIssues.find(x=>x.id===id);if(!i)return;let support=avg(state.boardMembers.map(m=>m.support));let chance=rec==="approve"?support:100-support;if(i.cost>150000)chance-=10;let approved=Math.random()*100<clamp(chance,15,95);i.status=approved?"Approved":"Denied";if(approved&&i.effect?.type==="fte"){let p=state.positions.find(x=>x.id===i.effect.positionId);if(p)p.authorized+=i.effect.amount;}state.boardHistory.unshift(`${fmtDate(state.date)} — ${i.title}: ${i.status}`);state.inbox.unshift(msg("School Board",`Board action: ${i.title}`,`The board ${i.status.toLowerCase()} the agenda item.`,"medium",["Acknowledge"]));render();
+}
+
+function generateInboxEvent(){let ev=pick([
+ ()=>msg("Parent","Class-size concern",`A parent is concerned about a class with more than ${pick([22,24,25])} students and requests a review.`,"medium",["Reply","Review Placement"]),
+ ()=>msg("Teacher","Supply request","A classroom teacher requests additional instructional materials before the next unit begins.","low",["Create PO","Reply"]),
+ ()=>msg("District Office","Enrollment projection update","District planning shared a revised enrollment projection due to continued housing growth in Willow Creek.","medium",["Acknowledge","Open Reports"]),
+ ()=>msg("Nurse","Health office workload","The nurse reports a heavier-than-normal week and asks for office backup during lunch coverage.","medium",["Assign Coverage","Acknowledge"]),
+ ()=>msg("Technology","Device repair backlog","Technology reports a growing backlog of student device repairs.","low",["Open Operations","Acknowledge"])
+ ]);state.inbox.unshift(ev());}
+function handleMessageAction(act){let m=state.inbox.find(x=>x.id===state.selectedMessage);if(!m)return;if(act==="Archive"){m.status="Archived";state.inbox=state.inbox.filter(x=>x.id!==m.id);state.selectedMessage=null;}else{m.status="Completed";if(act==="Begin Onboarding"){let a=state.applications.find(x=>x.status==="Offer Accepted"&&(m.subject.includes(x.name)||m.body.includes(x.name)));if(a){a.status="Onboarding";a.onboardingDays=0;}}log(`Inbox action completed: ${act} — ${m.subject}.`);if(act.includes("HR"))showView("hr");if(act.includes("Operations"))showView("operations");if(act.includes("Reports"))showView("reports");if(act==="Create PO")createPO();if(act==="Create Work Order")openWorkOrderModal();}render();}
+
+function weatherDecision(){
+ openModal("Weather Decision",`<div class="app-sheet"><h3>Morning Conditions</h3><p>Forecast: ${state.weather.condition}<br>Temperature: ${state.weather.temp}°F<br>Roads: ${state.weather.roads}</p></div><div class="actions"><button class="secondary" data-weather="Normal">Normal Schedule</button><button class="secondary" data-weather="2-hour Delay">2-hour Delay</button><button class="secondary" data-weather="Closed">Close School</button></div>`);
+ document.querySelectorAll("[data-weather]").forEach(b=>b.onclick=()=>{let d=b.dataset.weather;log(`Weather decision: ${d}.`);state.inbox.unshift(msg("District Communications","Weather decision recorded",`${d} selected for ${fmtDate(state.date)}.`,"low",["Acknowledge"]));closeModal();render();});
+}
+function fieldTrip(){
+ openModal("Field Trip Request",`<form id="tripForm"><div class="form-grid"><label>Grade<select id="tripGrade">${GRADES.map(g=>`<option>${g}</option>`).join("")}</select></label><label>Destination<input id="tripDest" value="Science Museum"></label><label>Estimated Cost<input id="tripCost" type="number" value="1450"></label></div><div class="actions"><button class="primary">Approve Trip</button></div></form>`);
+ $("tripForm").onsubmit=e=>{e.preventDefault();let g=$("tripGrade").value,d=$("tripDest").value,c=+$("tripCost").value;if(c>availableOperating())return alert("Insufficient funds.");state.finance.spentOps+=c;state.schedule.push({time:"TBD",item:`Grade ${g} field trip — ${d}`});state.inbox.unshift(msg("Transportation",`Field trip transportation request — Grade ${g}`,`Transportation request created for ${d}. This is ready for future bus-game integration.`,"low",["Acknowledge"]));log(`Approved Grade ${g} field trip to ${d}.`);closeModal();render();};
+}
+function addMeeting(){openModal("Add Principal Calendar Item",`<form id="meetingForm"><div class="form-grid"><label>Time<input id="meetingTime" value="10:00 AM"></label><label class="full">Meeting / Activity<input id="meetingItem" value="Parent conference"></label></div><div class="actions"><button class="primary">Add</button></div></form>`);$("meetingForm").onsubmit=e=>{e.preventDefault();state.schedule.push({time:$("meetingTime").value,item:$("meetingItem").value});closeModal();render();};}
+
+function endSchoolYear(){
+ let oldYear=state.schoolYear;state.students.filter(s=>s.status==="Active").forEach(s=>{if(s.grade==="6"){s.status="Promoted Out";s.history.unshift(`${oldYear}: Completed Grade 6`);}else{let i=GRADES.indexOf(s.grade);s.grade=GRADES[i+1];s.history.unshift(`${oldYear}: Promoted to Grade ${s.grade}`);}});
+ let k=rnd(48,72);for(let i=0;i<k;i++){let ln=pick(lastNames),f=state.families.find(x=>x.lastName===ln&&Math.random()<.25);if(!f){f={id:uid("fam"),name:`${ln} Family`,lastName:ln,engagement:"Typical",addressZone:pick(state.neighborhoods).name,phone:"555-555-0101",history:["New kindergarten family"]};state.families.push(f);}state.students.push({id:uid("stu"),first:pick(firstNames),last:ln,grade:"K",room:null,familyId:f.id,transport:pick(["Bus","Bus","Car rider","Walker"]),iep:Math.random()<.1,plan504:Math.random()<.04,ell:Math.random()<.05,attendance:100,reading:rnd(45,75),math:rnd(45,75),status:"Active",history:[`2027: Entered Kindergarten`]});}
+ activeEmployees().forEach(e=>{e.age++;e.experience++;e.yearsInDistrict++;if(e.category==="Teacher")e.salary=teacherSalary(e.degree,e.experience);if(e.leave&&e.leave.returnDate<=state.date)e.leave=null;});
+ let startYear=parseInt(oldYear,10)||2026,nextYear=startYear+1;state.schoolYear=`${nextYear}–${String(nextYear+1).slice(-2)}`;state.date=`${nextYear}-08-12`;state.instructionalDay=1;state.fiscalHistory.push({year:oldYear,enrollment:enrollment(),payroll:payroll(),building:buildingScore()});assignStudents(state);state.inbox.unshift(msg("District Office","New school year opened",`${state.schoolYear} has started. Review staffing, enrollment, and classroom assignments.`,"high",["Open HR","Open Reports"]));log(`Started new school year ${state.schoolYear}.`);simulateCalloffs();
+}
+
+function runSystemCheck(){
+ let checks=[
+  ["Students assigned",state.students.filter(s=>s.status==="Active"&&!s.room).length===0],
+  ["Position control loaded",state.positions.length>0],
+  ["Room map loaded",state.rooms.length>=30],
+  ["Save system available",typeof localStorage!=="undefined"],
+  ["Budget finite",Number.isFinite(availableOperating())],
+  ["HR application pipeline",Array.isArray(state.applications)],
+  ["Inbox",Array.isArray(state.inbox)],
+  ["Work orders",Array.isArray(state.workOrders)]
+ ];openModal("System Check",`<div class="app-sheet">${checks.map(([n,ok])=>`<div class="position-row"><span>${ok?"✅":"❌"} ${n}</span><strong>${ok?"Pass":"Needs Attention"}</strong></div>`).join("")}</div>`);
+}
+function importLegacySave(old){
+ let fresh=initialState();
+ if(old.year){let y=Number(old.year)||2026;fresh.schoolYear=`${y}–${String(y+1).slice(-2)}`;fresh.date=`${y}-08-13`;}
+ if(Number(old.budget)>0)fresh.finance.operatingBudget=Number(old.budget);
+ if(Number(old.boardRelationship)>=0)fresh.boardMembers?.forEach(m=>m.support=clamp(Math.round(Number(old.boardRelationship)+rnd(-6,6)),45,95));
+ if(Array.isArray(old.employees)&&old.employees.length){
+   fresh.employees=old.employees.filter(e=>!["Resigned","Retired","Terminated"].includes(e.status)).map((e,i)=>({
+     id:`LEGEMP_${e.id||i}`,name:e.name||`Employee ${i+1}`,category:e.category||"Staff",position:e.position||"Staff",assignment:e.assignment||"Lincoln Elementary",room:e.room||null,experience:Number(e.experience||0),yearsInDistrict:Number(e.yearsInDistrict||Math.max(1,e.experience||1)),age:Number(e.age||30),degree:e.degree||"N/A",license:e.license||"N/A",fte:1,schedule:e.category==="Operations"?"2:30 PM–11:00 PM":e.category==="Cafeteria"?"6:30 AM–2:00 PM":e.category==="Administration"?"7:00 AM–4:00 PM":"7:30 AM–3:15 PM",salary:Number(e.salary||42000),contract:e.contract||"Professional",status:e.status==="Active"?"Active":"Active",absence:null,leave:e.leave||null,morale:Number(e.morale||85),performance:Number(e.skill||e.performance||84),history:Array.isArray(e.history)?e.history:["Imported from previous Lincoln save"],equipment:["ID badge","Building key"]
+   }));
+   GRADES.forEach(g=>{let rooms=Object.entries(classroomGradeByRoom).filter(([,rg])=>rg===g).map(([rid])=>rid);let ts=fresh.employees.filter(e=>e.category==="Teacher"&&(e.grade===g||e.assignment===`Grade ${g}`||String(e.position).includes(`Grade ${g}`)));ts.forEach((e,i)=>{e.assignment=`Grade ${g}`;e.position=`Grade ${g} Teacher`;e.room=rooms[i]||null;});});
+   const supportMap={"Principal":"OFFICE","Assistant Principal":"OFFICE","School Secretary":"OFFICE","School Nurse":"NURSE","School Counselor":"COUNSEL","School Psychologist":"COUNSEL","Library / Media Teacher":"LIB","PE Teacher":"GYM","Music Teacher":"MUSIC","Art Teacher":"ART","Special Education Teacher":"SPED","Special Education Para":"SPED","Head Custodian":"CUST","Custodian":"CUST","Cafeteria Manager":"CAF","Cafeteria Assistant":"CAF","School Technology Specialist":"TECH"};
+   fresh.employees.forEach(e=>{if(e.category!=="Teacher"&&supportMap[e.position])e.room=supportMap[e.position];});
+ }
+ if(Array.isArray(old.students)&&old.students.length){
+   fresh.students=[];fresh.families=[];let famByLast={};
+   old.students.filter(s=>s.status!=="Withdrawn").forEach((s,i)=>{let parts=String(s.name||`Student ${i+1}`).trim().split(/\s+/),last=parts.pop()||"Family",first=parts.join(" ")||"Student";let f=famByLast[last];if(!f){f={id:uid("fam"),name:`${last} Family`,lastName:last,engagement:"Typical",addressZone:pick(fresh.neighborhoods).name,phone:"555-555-0101",history:["Imported from previous Lincoln save"]};fresh.families.push(f);famByLast[last]=f;}fresh.students.push({id:`LEGSTU_${s.id||i}`,first,last,grade:String(s.grade),room:null,familyId:f.id,transport:pick(["Bus","Bus","Car rider","Walker"]),iep:!!s.iep,plan504:!!s.plan504,ell:false,attendance:Number(s.attendance||95),reading:rnd(55,92),math:rnd(55,92),status:"Active",history:Array.isArray(s.history)?s.history:["Imported from previous Lincoln save"]});});
+   assignStudents(fresh);
+ }
+ fresh.activity.unshift("Imported staff, students, school year, and budget from the previous Lincoln simulator save.");
+ return fresh;
+}
+
+function save(silent=false){localStorage.setItem(SAVE_KEY,JSON.stringify(state));if(!silent)toast("Game saved in this browser.");}
+function load(){
+ let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);toast("Saved game loaded.");render();return;}catch{}}
+ let legacy=localStorage.getItem(LEGACY_KEY);if(legacy){try{let old=JSON.parse(legacy);state=importLegacySave(old);toast("Previous Lincoln save imported into the realism build.");render();return;}catch(err){console.error(err);}}
+ toast("No saved realism game found.");
+}
+function showView(v){document.querySelectorAll(".view").forEach(x=>x.classList.remove("active-view"));document.querySelectorAll(".nav-btn").forEach(x=>x.classList.toggle("active",x.dataset.view===v));$("view-"+v).classList.add("active-view");}
+
+document.querySelectorAll(".nav-btn").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+$("modalClose").onclick=closeModal;$("modal").addEventListener("click",e=>{if(e.target===$("modal"))closeModal();});
+$("saveBtn").onclick=()=>save(false);$("loadBtn").onclick=load;$("advanceDayBtn").onclick=advanceDay;$("runDayBtn").onclick=runSchoolDay;
+$("postVacancyQuick").onclick=postVacancyModal;$("postVacancyBtn").onclick=postVacancyModal;$("enrollStudentQuick").onclick=openEnrollFamily;$("enrollStudentBtn").onclick=openEnrollFamily;
+$("newWorkOrderQuick").onclick=()=>openWorkOrderModal();$("newWorkOrderBtn").onclick=()=>openWorkOrderModal();$("weatherDecisionQuick").onclick=weatherDecision;$("fieldTripQuick").onclick=fieldTrip;
+$("boardRequestQuick").onclick=addBoardIssue;$("newBoardIssueBtn").onclick=addBoardIssue;$("requestFteBtn").onclick=requestFTE;$("newPurchaseBtn").onclick=createPO;
+$("refreshAbsencesBtn").onclick=simulateCalloffs;$("addMeetingBtn").onclick=addMeeting;$("markAllReadBtn").onclick=()=>{state.inbox.forEach(m=>m.read=true);render();};$("systemCheckBtn").onclick=runSystemCheck;
+["studentGradeFilter","studentNeedFilter"].forEach(id=>$(id).onchange=renderStudents);$("studentSearch").oninput=renderStudents;["staffCategoryFilter","staffStatusFilter"].forEach(id=>$(id).onchange=renderStaff);$("staffSearch").oninput=renderStaff;
+["showCounts","showTemps","showCleaning","showOrders"].forEach(id=>$(id).onchange=e=>{state.settings[id]=e.target.checked;renderBuilding();});
+document.querySelectorAll("[data-room-filter]").forEach(cb=>cb.onchange=()=>{document.querySelectorAll(`.room-map.${cb.dataset.roomFilter}`).forEach(x=>x.style.display=cb.checked?"":"none");});
+
+simulateCalloffs();
+render();
