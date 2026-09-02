@@ -1,9 +1,10 @@
-const GAME_VERSION="5.0";
-const GAME_BUILD="2026-09-02 09:32 ET";
+const GAME_VERSION="6.0";
+const GAME_BUILD="2026-09-02 13:08 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
-const SAVE_KEY="lincolnElementarySimulatorLivingV5";
+const SAVE_KEY="lincolnElementarySimulatorDistrictV6";
+const V5_SAVE_KEY="lincolnElementarySimulatorLivingV5";
 const V3_SAVE_KEY="lincolnElementarySimulatorRealismV3";
 const LEGACY_KEY="lincolnElementarySimulatorSaveV2";
 const $=id=>document.getElementById(id);
@@ -741,5 +742,130 @@ function initApp(){
    bindUI();render();
  }catch(err){startupFailure(err);try{bindUI()}catch{}}
 }
+
+
+
+/* =========================================================
+   LINCOLN ELEMENTARY V6.0 — DISTRICT + WHO'S WHERE
+   ========================================================= */
+function ensureV6State(){
+  ensureV5State();
+  state.version=6;
+  state.district=state.district||{
+    name:"Lincoln Community Schools",
+    schools:[
+      {id:"LIN",name:"Lincoln Elementary",level:"K–6",enrollment:enrollment(),capacity:480,rating:state.metrics.reputation,principal:"You"},
+      {id:"PRA",name:"Prairie View Elementary",level:"K–6",enrollment:396,capacity:450,rating:79,principal:"Dr. Erin Cole"},
+      {id:"RIV",name:"Riverside Elementary",level:"K–6",enrollment:421,capacity:470,rating:83,principal:"Marcus Hill"},
+      {id:"LMS",name:"Lincoln Middle School",level:"7–8",enrollment:612,capacity:700,rating:81,principal:"Dana Brooks"},
+      {id:"LHS",name:"Lincoln High School",level:"9–12",enrollment:1284,capacity:1450,rating:84,principal:"Angela Reed"}
+    ],
+    departments:["Superintendent Office","Human Resources","Curriculum & Instruction","Special Education","Facilities","Technology","Food Service","Transportation","Finance"],
+    buses:24,driversAvailable:22,routes:21,onTime:94,
+    career:{reputation:state.metrics.reputation,yearsAsPrincipal:1,nextRole:"District Director / larger building"}
+  };
+  state.transportation=state.transportation||{lateBuses:[],dailyChanges:0};
+  state.students.forEach((s,i)=>{
+    if(!s.amTransport)s.amTransport=(i%5===0?"Car Rider":i%11===0?"Walker":`Bus ${10+(i%12)}`);
+    if(!s.pmTransport)s.pmTransport=(i%7===0?"Daycare":s.amTransport);
+  });
+}
+function classroomHome(student){return student.room||student.classroom||student.roomId||"";}
+function gradeSpecialRoom(g){
+  const order=["GYM","MUSIC","ART","LIB"];
+  const idx=(GRADES.indexOf(String(g))+Math.floor(state.instructionalDay/2))%order.length;
+  return order[idx];
+}
+function currentStudentLocation(s){
+  const m=state.simMinutes, home=classroomHome(s);
+  if(m<490)return "Not on campus";
+  if(m<515)return "ENTRY";
+  if(m>=875&&m<920)return "ENTRY";
+  if(m>=920)return "Off campus";
+  const g=String(s.grade);
+  if(m>=640&&m<690 && !["K","1","2"].includes(g)) return gradeSpecialRoom(g);
+  if(m>=690&&m<750 && ["K","1","2"].includes(g)) return "CAF";
+  if(m>=750&&m<810 && !["K","1","2"].includes(g)) return "CAF";
+  return home;
+}
+function currentEmployeeLocation(e){
+  const m=state.simMinutes;
+  if(e.status==="Absent"||e.leave)return "Off campus";
+  if(e.category==="Teacher"){
+    if(m<450)return "Off campus";
+    if(m>=640&&m<690 && !["K","1","2"].includes(String((e.assignment||"").replace("Grade ",""))))return e.room||"OFFICE";
+    if(m>=875&&m<920)return "ENTRY";
+    return e.room||"OFFICE";
+  }
+  if(e.position.includes("Principal")&&m>=490&&m<920)return m>=875?"ENTRY":"OFFICE";
+  if(e.category==="Cafeteria")return "CAF";
+  if(e.category==="Operations")return "CUST";
+  return e.room||"OFFICE";
+}
+function locationLabel(id){
+  if(!id||id==="Off campus"||id==="Not on campus")return id||"Unknown";
+  const r=roomById(id); if(r)return `${id} — ${r.name}`;
+  const layout=ROOM_LAYOUT.find(x=>x[0]===id);return layout?`${id} — ${layout[1]}`:id;
+}
+function roomOccupancy(id){
+  return state.students.filter(s=>s.status==="Active"&&currentStudentLocation(s)===id).length;
+}
+function renderWhoWhere(){
+  const box=$("whoWhereResults"),input=$("whoWhereSearch"); if(!box||!input)return;
+  const q=input.value.trim().toLowerCase();
+  if(!q){box.innerHTML=`<div class="compact-item"><strong>${mins12(state.simMinutes)}</strong><br>${schoolPhase()}</div><div class="muted small">Type a student or staff name.</div>`;return;}
+  let people=[];
+  state.students.filter(s=>`${s.first} ${s.last}`.toLowerCase().includes(q)).slice(0,5).forEach(s=>people.push({name:`${s.first} ${s.last}`,role:`Grade ${s.grade} student`,loc:currentStudentLocation(s),extra:`AM ${s.amTransport} • PM ${s.pmTransport}`}));
+  activeEmployees().filter(e=>e.name.toLowerCase().includes(q)).slice(0,5).forEach(e=>people.push({name:e.name,role:e.position,loc:currentEmployeeLocation(e),extra:e.schedule}));
+  box.innerHTML=people.length?people.slice(0,8).map(p=>`<button class="who-person" data-loc="${p.loc}"><strong>${p.name}</strong><span>${p.role}</span><span>📍 ${locationLabel(p.loc)}</span><small>${p.extra}</small></button>`).join(""):`<div class="muted small">No matching person found.</div>`;
+  box.querySelectorAll("[data-loc]").forEach(b=>b.onclick=()=>{let loc=b.dataset.loc;if(roomById(loc)){state.selectedRoom=loc;renderBuilding();}});
+}
+function renderDistrict(){
+  ensureV6State();
+  state.district.schools[0].enrollment=enrollment();state.district.schools[0].rating=state.metrics.reputation;
+  const total=state.district.schools.reduce((a,s)=>a+s.enrollment,0);
+  if($("districtKpis"))$("districtKpis").innerHTML=[
+    ["District Enrollment",total.toLocaleString()],["Schools",state.district.schools.length],["Buses",state.district.buses],["On-time Routes",`${state.district.onTime}%`]
+  ].map(x=>`<div class="stat-box"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join("");
+  if($("districtSchools"))$("districtSchools").innerHTML=state.district.schools.map(s=>`<div class="district-school ${s.id==="LIN"?"current-school":""}"><div><strong>${s.name}</strong><span>${s.level} • Principal: ${s.principal}</span></div><div class="school-numbers"><strong>${s.enrollment}</strong><span>of ${s.capacity}</span></div><div class="progress"><i style="width:${Math.min(100,s.enrollment/s.capacity*100)}%"></i></div><small>${Math.round(s.enrollment/s.capacity*100)}% utilized • Reputation ${s.rating}</small></div>`).join("");
+  if($("districtDepartments"))$("districtDepartments").innerHTML=state.district.departments.map(d=>`<div class="compact-item">${d}</div>`).join("");
+  if($("districtNeighborhoods"))$("districtNeighborhoods").innerHTML=state.neighborhoods.map(n=>`<div class="position-row"><span><strong>${n.name}</strong><br><span class="muted">${n.students} Lincoln students</span></span><span class="badge ${n.growth>2?"warn":"info"}">${n.growth>0?"+":""}${n.growth}% growth</span></div>`).join("");
+  if($("transportSnapshot"))$("transportSnapshot").innerHTML=`<div class="inspector-grid"><div class="inspector-stat"><span>Routes</span><strong>${state.district.routes}</strong></div><div class="inspector-stat"><span>Drivers</span><strong>${state.district.driversAvailable}/${state.district.buses}</strong></div></div><div class="compact-item"><strong>${state.district.onTime}%</strong> of routes on time today.<br>${state.students.filter(s=>String(s.amTransport).startsWith("Bus")).length} Lincoln students assigned to AM buses.</div>`;
+  if($("careerSnapshot"))$("careerSnapshot").innerHTML=`<div class="compact-item"><strong>Principal Reputation</strong><br>${state.metrics.reputation}/100</div><div class="compact-item"><strong>Years at Lincoln</strong><br>${state.district.career.yearsAsPrincipal}</div><div class="compact-item"><strong>Potential Next Step</strong><br>${state.district.career.nextRole}</div>`;
+}
+
+const renderBeforeV6=render;
+render=function(){ensureV6State();renderBeforeV6();safeSection("district",renderDistrict);safeSection("whowhere",renderWhoWhere);};
+
+const renderBuildingBeforeV6=renderBuilding;
+renderBuilding=function(){
+  ensureV6State();renderBuildingBeforeV6();
+  document.querySelectorAll(".room-map").forEach(b=>{
+    const id=b.querySelector(".rid")?.textContent;if(!id)return;
+    const occ=roomOccupancy(id);
+    const activity=b.querySelector(".activity-map");
+    if(activity && roomById(id)?.grade){
+      const home=studentsInRoom(id).length;
+      if(occ!==home)activity.textContent=`${classroomActivity(roomById(id))} • ${occ} currently here`;
+    }
+  });
+  renderWhoWhere();
+};
+
+const loadBeforeV6=load;
+load=function(){
+  let raw=localStorage.getItem(SAVE_KEY);
+  if(raw){try{state=JSON.parse(raw);ensureV6State();toast("V6 saved game loaded.");render();return;}catch(err){console.error(err)}}
+  let v5=localStorage.getItem(V5_SAVE_KEY);
+  if(v5){try{state=JSON.parse(v5);ensureV6State();state.schoolHistory.unshift({date:state.date,text:"Upgraded Lincoln from Living School V5.0 to District Simulation V6.0."});toast("Your V5 game was upgraded to V6.0. Save now to create a V6 save.");render();return;}catch(err){console.error(err)}}
+  return loadBeforeV6();
+};
+
+const bindUIBeforeV6=bindUI;
+bindUI=function(){
+  bindUIBeforeV6();
+  const ww=$("whoWhereSearch");if(ww)ww.addEventListener("input",renderWhoWhere);
+};
+
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();

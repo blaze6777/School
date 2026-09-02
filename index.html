@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lincoln Elementary — Living School Simulator V5</title>
-<link rel="stylesheet" href="styles.css?v=5.0">
+<title>Lincoln Elementary — District Simulation V6</title>
+<link rel="stylesheet" href="styles.css?v=6.0">
 </head>
 <body>
 <div id="app">
 <header class="topbar">
-  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Living School Simulator • K–6</div><div id="versionBadge" class="version-badge">Version 5.0 • Build 2026-09-02 09:32 ET</div></div>
+  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">District Simulation • K–6</div><div id="versionBadge" class="version-badge">Version 6.0 • Build 2026-09-02 13:08 ET</div></div>
   <nav class="nav-tabs" aria-label="Game sections">
     <button class="nav-btn active" data-view="command">🏠 Command</button>
     <button class="nav-btn" data-view="building">🗺️ Building</button>
@@ -20,6 +20,7 @@
     <button class="nav-btn" data-view="finance">💰 Finance</button>
     <button class="nav-btn" data-view="board">🏛️ Board</button>
     <button class="nav-btn" data-view="inbox">📬 Inbox <span id="unreadBadge" class="count-badge"></span></button>
+    <button class="nav-btn" data-view="district">🏫 District</button>
     <button class="nav-btn" data-view="reports">📊 Reports</button>
   </nav>
   <div class="top-actions">
@@ -79,6 +80,10 @@
         <label><input type="checkbox" data-room-filter="support" checked> Support</label>
         <label><input type="checkbox" data-room-filter="facility" checked> Facilities</label>
       </div>
+      <h3>Who’s Where?</h3>
+      <p class="muted">Find a student or employee at the current simulation time.</p>
+      <input id="whoWhereSearch" class="who-search" placeholder="Search a name…">
+      <div id="whoWhereResults" class="who-results"></div>
       <h3>Display</h3>
       <label class="toggle-row"><input id="showTeachers" type="checkbox" checked> Teacher names</label>
       <label class="toggle-row"><input id="showCounts" type="checkbox" checked> Student counts</label>
@@ -154,6 +159,25 @@
   </div>
 </section>
 
+
+<section id="view-district" class="view">
+  <div class="command-grid">
+    <div class="stack">
+      <section class="card padded">
+        <div class="section-head"><div><h2>Lincoln Community Schools</h2><p class="muted">A living district around Lincoln Elementary. Other schools operate in the background.</p></div><span class="badge info">District Simulation</span></div>
+        <div id="districtKpis" class="stat-grid"></div>
+      </section>
+      <section class="card padded"><h2>District Schools</h2><div id="districtSchools" class="district-school-grid"></div></section>
+      <section class="card padded"><h2>Neighborhood & Enrollment Outlook</h2><div id="districtNeighborhoods"></div></section>
+    </div>
+    <aside class="stack">
+      <section class="panel"><h2>District Departments</h2><div id="districtDepartments" class="panel-body compact-list"></div></section>
+      <section class="panel"><h2>Transportation Snapshot</h2><div id="transportSnapshot" class="panel-body"></div></section>
+      <section class="panel"><h2>Principal Career</h2><div id="careerSnapshot" class="panel-body"></div></section>
+    </aside>
+  </div>
+</section>
+
 <section id="view-reports" class="view">
   <section class="card padded"><div class="section-head"><div><h2>Administrative Reports</h2><p class="muted">Operational information is presented through reports instead of perfect knowledge.</p></div><button id="systemCheckBtn" class="secondary">Run System Check</button></div><div id="reportGrid" class="report-grid"></div></section>
   <div class="reports-v5-grid">
@@ -170,6 +194,6 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-card"><div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="icon-btn" aria-label="Close">✕</button></div><div id="modalBody" class="modal-body"></div></div>
 </div>
-<script src="app.js?v=5.0"></script>
+<script src="app.js?v=6.0"></script>
 </body>
 </html>
