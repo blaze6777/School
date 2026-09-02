@@ -1,9 +1,10 @@
-const GAME_VERSION="7.0";
-const GAME_BUILD="2026-09-02 13:28 ET";
+const GAME_VERSION="8.0";
+const GAME_BUILD="2026-09-02 14:10 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
-const SAVE_KEY="lincolnElementarySimulatorPlayableV7";
+const SAVE_KEY="lincolnElementarySimulatorRealLifeV8";
+const V7_SAVE_KEY="lincolnElementarySimulatorPlayableV7";
 const V6_SAVE_KEY="lincolnElementarySimulatorDistrictV6";
 const V5_SAVE_KEY="lincolnElementarySimulatorLivingV5";
 const V3_SAVE_KEY="lincolnElementarySimulatorRealismV3";
@@ -893,6 +894,138 @@ function openPhone(){$("phonePanel").classList.remove("hidden");renderPhone("ale
 const renderBeforeV7=render;render=function(){ensureV7State();renderBeforeV7();renderPlayControls();renderWalkMode();};
 const loadBeforeV7=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV7State();toast("V7 saved game loaded.");render();return;}catch(err){console.error(err)}}let v6=localStorage.getItem(V6_SAVE_KEY);if(v6){try{state=JSON.parse(v6);ensureV7State();state.schoolHistory.unshift({date:state.date,text:"Upgraded Lincoln from District Simulation V6.0 to Playable School V7.0."});toast("Your V6 game was upgraded to V7.0. Save now to create a V7 save.");render();return;}catch(err){console.error(err)}}return loadBeforeV7();};
 const bindUIBeforeV7=bindUI;bindUI=function(){bindUIBeforeV7();$("playPauseBtn")?.addEventListener("click",togglePlay);$("speedBtn")?.addEventListener("click",cycleSpeed);$("walkBtn")?.addEventListener("click",openWalk);$("walkCloseBtn")?.addEventListener("click",closeWalk);$("phoneBtn")?.addEventListener("click",openPhone);$("phoneCloseBtn")?.addEventListener("click",closePhone);document.querySelectorAll("[data-phone]").forEach(b=>b.addEventListener("click",()=>renderPhone(b.dataset.phone)));startPlayLoop();};
+
+
+
+
+/* ========================================================= V8 REAL LIFE SCHOOL ========================================================= */
+function ensureV8State(){
+ ensureV7State();state.version=8;
+ state.schoolCalendar=state.schoolCalendar||{instructionalRequired:180,makeupDays:0,closures:0,delays:0,events:[
+  {date:'2026-09-07',type:'Holiday',name:'Labor Day'},{date:'2026-10-16',type:'No School',name:'Teacher Professional Development'},
+  {date:'2026-11-25',type:'Break',name:'Thanksgiving Break Begins'},{date:'2026-12-21',type:'Break',name:'Winter Break Begins'},
+  {date:'2027-01-04',type:'School',name:'Students Return'},{date:'2027-03-29',type:'Break',name:'Spring Break Begins'},
+  {date:'2027-05-24',type:'Event',name:'Field Day'},{date:'2027-05-27',type:'Event',name:'Sixth Grade Celebration'}]};
+ state.delegation=state.delegation||[
+  {area:'Attendance & front office',role:'School Secretary',autonomy:84},{area:'Routine discipline & dismissal',role:'Assistant Principal',autonomy:78},
+  {area:'Counseling & attendance interventions',role:'School Counselor',autonomy:86},{area:'Building & cleaning',role:'Head Custodian',autonomy:88},
+  {area:'IEP compliance & caseloads',role:'Special Education Teacher',autonomy:82},{area:'Devices & classroom technology',role:'School Technology Specialist',autonomy:80}
+ ];
+ state.inventory=state.inventory||[
+  {id:'PAPER',name:'Copy paper',qty:118,par:80,unit:'cases',account:'Office'},{id:'TONER',name:'Printer toner',qty:24,par:18,unit:'cartridges',account:'Technology'},
+  {id:'CLEAN',name:'Cleaning chemical',qty:38,par:25,unit:'cases',account:'Facilities'},{id:'LINERS',name:'Trash liners',qty:64,par:40,unit:'cases',account:'Facilities'},
+  {id:'GLOVES',name:'Nitrile gloves',qty:31,par:20,unit:'cases',account:'Health/Facilities'},{id:'CHROME',name:'Spare student devices',qty:17,par:12,unit:'devices',account:'Technology'},
+  {id:'CAF',name:'Cafeteria dry goods',qty:72,par:55,unit:'cases',account:'Food Service'}
+ ];
+ state.maintenance=state.maintenance||[
+  {id:'HVAC',asset:'HVAC filter rotation',area:'Building',interval:30,lastDay:1,nextDay:30,status:'Scheduled'},
+  {id:'PLAY',asset:'Playground safety inspection',area:'Playground',interval:20,lastDay:1,nextDay:20,status:'Scheduled'},
+  {id:'FIRE',asset:'Fire extinguisher / egress check',area:'Building',interval:30,lastDay:1,nextDay:30,status:'Scheduled'},
+  {id:'KITCH',asset:'Kitchen equipment PM',area:'Kitchen',interval:45,lastDay:1,nextDay:45,status:'Scheduled'},
+  {id:'ROOF',asset:'Roof / drain inspection',area:'Exterior',interval:60,lastDay:1,nextDay:60,status:'Scheduled'}
+ ];
+ state.custodialZones=state.custodialZones||[
+  {id:'A',name:'K–2 Wing',rooms:['101','102','103','104','105','106'],score:94,assigned:null,status:'On Track'},
+  {id:'B',name:'3–6 Wing',rooms:['110','111','112','201','202','203','204','205','206','207','208','209'],score:92,assigned:null,status:'On Track'},
+  {id:'C',name:'Commons & Support',rooms:['CAF','GYM','LIB','MUSIC','ART','OFFICE','HEALTH','SPED','TECH'],score:91,assigned:null,status:'On Track'}
+ ];
+ let custodians=activeEmployees().filter(e=>e.category==='Operations'&&e.position.includes('Custodian'));
+ state.custodialZones.forEach((z,i)=>{if(!z.assigned&&custodians[i])z.assigned=custodians[i].id;});
+ state.capitalProjects=state.capitalProjects||[];
+ state.yearArchives=state.yearArchives||[];
+ state.achievements=state.achievements||{};
+ state.techTickets=state.techTickets||[];
+ state.cafeteria=state.cafeteria||{mealsToday:0,inspectionScore:96,equipmentCondition:91,menu:'Chicken sandwich • fruit • vegetable • milk'};
+ state.transportOps=state.transportOps||{changesToday:0,lateRoutes:0,carLineMinutes:14,busOnTime:94};
+ state.formerPeople=state.formerPeople||{employees:[],students:[]};
+ state.hiringClearance=state.hiringClearance||{};
+ activeEmployees().forEach((e,i)=>{
+  e.pto=e.pto||{sick:Math.max(2,10-(i%5)),personal:Math.max(1,3-(i%2)),used:0};
+  e.memories=e.memories||[{date:state.date,text:'Part of the Lincoln Elementary staff.'}];
+  e.preferences=e.preferences||{assignment:e.assignment,career: e.category==='Teacher'?(e.experience>10?'Mentor / leadership':'Classroom growth'):'Role stability'};
+  e.property=e.property||[...(e.equipment||[]), ...(e.category==='Teacher'?['Classroom key']:[])];
+  e.contractStatus=e.contractStatus||'Active';e.renewal=e.renewal||'Pending spring review';e.attendancePattern=e.attendancePattern||'Typical';
+  if(e.degree==='BA'&&e.experience>7&&i%4===0)e.educationGoal=e.educationGoal||'Working toward MA';
+ });
+ state.families.forEach((f,i)=>{f.memories=f.memories||[{date:state.date,text:'Family relationship established with Lincoln.'}];f.contacts=f.contacts||[{name:`${f.lastName} Parent/Guardian`,relationship:'Parent/Guardian',approvedPickup:true}];f.residency=f.residency||'Verified';f.recordsStatus=f.recordsStatus||'Complete';if(i%17===0)f.pickupNote=f.pickupNote||'Verify photo ID for alternate pickup.';});
+ state.students.forEach((s,i)=>{
+  s.memories=s.memories||[];s.behavior=s.behavior||{incidents:i%23===0?2:i%11===0?1:0,trend:i%23===0?'Needs support':'Typical'};
+  s.mtss=s.mtss||((s.reading<65||s.math<65)?'Tier 2':(s.reading<55||s.math<55)?'Tier 3':'Tier 1');
+  s.growth=s.growth||{reading:0,math:0};s.custodyFlag=s.custodyFlag||false;s.records=s.records||'Complete';
+  s.medicalSchool=s.medicalSchool||((i%29===0)?'Health plan on file':'Routine');
+ });
+ state.substitutes.forEach((s,i)=>{s.preferredSchools=s.preferredSchools||['Lincoln Elementary'];s.availableDays=s.availableDays||5-(i%2);});
+ state.applications.forEach(a=>{if(!state.hiringClearance[a.id])state.hiringClearance[a.id]={background:a.status==='Hired'?'Clear':'Pending',license:a.status==='Hired'?'Verified':'Pending',references:a.referenceScore?'Complete':'Pending',hr:a.status==='Hired'?'Cleared':'Pending'};});
+}
+function employeeByPosition(role){return activeEmployees().find(e=>e.position===role||e.assignment===role);}
+function memoryAdd(person,text){person.memories=person.memories||[];person.memories.unshift({date:state.date,text});person.memories=person.memories.slice(0,12);}
+function delegationScore(area){let d=state.delegation.find(x=>x.area===area);return d?d.autonomy:65;}
+function routineHandled(area){return Math.random()*100<delegationScore(area);}
+function v8DailyProgress(minutes=5){
+ ensureV8State(); let fraction=minutes/420;
+ // academic growth accumulates slowly and depends on teacher performance / attendance
+ if(state.simMinutes>=515&&state.simMinutes<=875){state.students.filter(s=>s.status==='Active').forEach(s=>{let t=teacherForRoom(s.room),quality=t?t.performance:70,att=s.attendance/100;let rg=(quality/100)*att*fraction*.42,mg=(quality/100)*att*fraction*.38;s.growth.reading+=rg;s.growth.math+=mg;if(Math.random()<.0008*minutes){s.reading=Math.min(100,s.reading+1);s.math=Math.min(100,s.math+(Math.random()<.65?1:0));}});}
+ // inventory consumption
+ if(state.simMinutes>=515&&state.simMinutes<=920){let use=Math.max(.01,minutes/420);state.inventory.forEach(it=>{let rate=it.id==='PAPER'?.16:it.id==='CAF'?.32:it.id==='CLEAN'?.12:.05;it.qty=Math.max(0,it.qty-rate*use);});}
+ // cafeteria and transport realism
+ if(state.simMinutes>=690&&state.simMinutes<810)state.cafeteria.mealsToday=Math.min(enrollment(),Math.round(enrollment()*.88));
+ if(state.simMinutes>=875&&state.simMinutes<920){state.transportOps.changesToday=Math.max(state.transportOps.changesToday,state.dailyCounters?.earlyDismissal||0);}
+ // maintenance due status
+ state.maintenance.forEach(m=>{m.status=state.instructionalDay>=m.nextDay?'Due':'Scheduled';});
+ // delegated event filtering: some routine V7 alerts get solved automatically
+ if(state.liveAlerts?.length){let a=state.liveAlerts[0];if(!a.v8Checked){a.v8Checked=true;let area=a.icon==='🧹'?'Building & cleaning':a.icon==='💻'?'Devices & classroom technology':a.icon==='📞'?'Attendance & front office':a.icon==='🚌'?'Routine discipline & dismissal':null;if(area&&routineHandled(area)){a.body+=` ${state.delegation.find(d=>d.area===area)?.role||'Staff'} handled the routine response without needing you.`;a.priority='Info';}}}
+}
+function renderV8Students(){
+ let board=$('mtssBoard');if(board){let tiers=['Tier 1','Tier 2','Tier 3'].map(t=>[t,state.students.filter(s=>s.status==='Active'&&s.mtss===t).length]);let behavior=state.students.filter(s=>s.behavior?.incidents>0&&s.status==='Active').length;board.innerHTML=`<div class="stat-grid">${tiers.map(x=>`<div class="stat-box"><span>${x[0]}</span><strong>${x[1]}</strong></div>`).join('')}<div class="stat-box"><span>Behavior histories</span><strong>${behavior}</strong></div></div><div class="compact-list">${state.students.filter(s=>s.status==='Active'&&(s.mtss!=='Tier 1'||s.behavior?.incidents>1)).slice(0,8).map(s=>`<div class="compact-item"><strong>${s.first} ${s.last}</strong> • Grade ${s.grade}<br>${s.mtss} • Reading ${s.reading} • Math ${s.math} • ${s.behavior.trend}</div>`).join('')||'<div class="muted">No urgent intervention reviews.</div>'}</div>`;}
+ let fam=$('familyRecordsBoard');if(fam){let incomplete=state.families.filter(f=>f.recordsStatus!=='Complete').length,flags=state.families.filter(f=>f.pickupNote).length;fam.innerHTML=`<div class="inspector-grid"><div class="inspector-stat"><span>Households</span><strong>${state.families.length}</strong></div><div class="inspector-stat"><span>Pickup notes</span><strong>${flags}</strong></div><div class="inspector-stat"><span>Incomplete records</span><strong>${incomplete}</strong></div></div><div class="compact-item"><strong>Records process</strong><br>Move-ins request prior records; residency and authorized pickup contacts stay with the household.</div>`;}
+}
+function renderV8Staff(){
+ let c=$('careerMemoryBoard');if(c){let goals=activeEmployees().filter(e=>e.educationGoal).slice(0,6);let retire=activeEmployees().filter(e=>e.age>=60).slice(0,6);c.innerHTML=`<div class="inspector-grid"><div class="inspector-stat"><span>Spring renewals pending</span><strong>${activeEmployees().filter(e=>e.renewal==='Pending spring review').length}</strong></div><div class="inspector-stat"><span>Retirement-eligible signal</span><strong>${retire.length}</strong></div><div class="inspector-stat"><span>Education goals</span><strong>${goals.length}</strong></div></div>${goals.map(e=>`<div class="compact-item"><strong>${e.name}</strong><br>${e.educationGoal}</div>`).join('')}${retire.map(e=>`<div class="compact-item"><strong>${e.name}</strong><br>Veteran employee • ${e.yearsInDistrict} years in district</div>`).join('')}`;}
+ let d=$('delegationBoard');if(d)d.innerHTML=state.delegation.map(x=>{let person=employeeByPosition(x.role);return`<div class="position-row"><span><strong>${x.area}</strong><br><span class="muted">${person?.name||x.role}</span></span><span class="badge ${x.autonomy>=82?'good':x.autonomy>=72?'info':'warn'}">${x.autonomy>=82?'Strong autonomy':x.autonomy>=72?'Typical':'Needs oversight'}</span></div>`}).join('');
+}
+function renderV8HR(){
+ let p=$('ptoBoard');if(p){let low=activeEmployees().filter(e=>e.pto.sick<=3).length,used=activeEmployees().reduce((a,e)=>a+e.pto.used,0);p.innerHTML=`<div class="stat-grid"><div class="stat-box"><span>Low sick banks</span><strong>${low}</strong></div><div class="stat-box"><span>Days used YTD</span><strong>${used}</strong></div><div class="stat-box"><span>Subs available</span><strong>${state.substitutes.filter(s=>s.status==='Available').length}</strong></div></div>${activeEmployees().filter(e=>e.status==='Absent'||e.pto.sick<=3).slice(0,7).map(e=>`<div class="position-row"><span>${e.name}<br><span class="muted">Sick ${e.pto.sick.toFixed(1)} • Personal ${e.pto.personal.toFixed(1)}</span></span><span class="badge ${e.status==='Absent'?'danger':'warn'}">${e.status==='Absent'?'Absent':'Low balance'}</span></div>`).join('')}`;}
+ let clr=$('clearanceBoard');if(clr){let apps=state.applications.filter(a=>!['Rejected','Hired'].includes(a.status)).slice(0,6);clr.innerHTML=apps.length?apps.map(a=>{let h=state.hiringClearance[a.id]||{};return`<div class="compact-item"><strong>${a.name}</strong> — ${a.status}<br>Background: ${h.background||'Pending'} • License: ${h.license||'Pending'} • References: ${h.references||'Pending'} • HR: ${h.hr||'Pending'}</div>`}).join(''):'<div class="muted">No candidates currently in clearance.</div>';}
+}
+function renderV8Operations(){
+ let z=$('custodialZones');if(z)z.innerHTML=state.custodialZones.map(x=>{let e=state.employees.find(a=>a.id===x.assigned);return`<div class="position-row"><span><strong>Zone ${x.id} — ${x.name}</strong><br><span class="muted">${e?.name||'Unassigned'} • ${x.rooms.length} rooms</span></span><span class="badge ${x.score>=90?'good':x.score>=80?'warn':'danger'}">${Math.round(x.score)}%</span></div>`}).join('');
+ let pm=$('pmBoard');if(pm)pm.innerHTML=state.maintenance.map(m=>`<div class="position-row"><span><strong>${m.asset}</strong><br><span class="muted">${m.area} • next due Day ${m.nextDay}</span></span><span class="badge ${m.status==='Due'?'warn':'good'}">${m.status}</span></div>`).join('');
+ let inv=$('inventoryBoard');if(inv)inv.innerHTML=`<div class="inventory-grid">${state.inventory.map(i=>`<div class="inventory-item ${i.qty<i.par?'low-stock':''}"><strong>${i.name}</strong><span>${Math.floor(i.qty)} ${i.unit}</span><small>Par ${i.par} • ${i.account}</small></div>`).join('')}</div><h3>Technology tickets</h3>${state.techTickets.slice(0,5).map(t=>`<div class="compact-item">${t.status==='Open'?'🔧':'✅'} ${t.issue} — ${t.location}</div>`).join('')||'<div class="muted small">No open technology backlog.</div>'}`;
+ let ops=$('dailyOpsBoard');if(ops)ops.innerHTML=`<div class="stat-grid"><div class="stat-box"><span>Meals today</span><strong>${state.cafeteria.mealsToday}</strong></div><div class="stat-box"><span>Kitchen condition</span><strong>${state.cafeteria.equipmentCondition}%</strong></div><div class="stat-box"><span>Bus on-time</span><strong>${state.transportOps.busOnTime}%</strong></div><div class="stat-box"><span>PM changes</span><strong>${state.transportOps.changesToday}</strong></div></div><div class="compact-item"><strong>Today's menu</strong><br>${state.cafeteria.menu}</div>`;
+}
+function renderV8Finance(){let b=$('capitalProjectsBoard');if(b)b.innerHTML=state.capitalProjects.length?state.capitalProjects.map(p=>`<div class="position-row"><span><strong>${p.name}</strong><br><span class="muted">${p.stage} • ${money(p.cost)} • ${p.progress}%</span></span><span class="badge ${p.stage==='Complete'?'good':'info'}">${p.stage}</span></div>`).join(''):'<div class="muted">No active capital projects. Major improvements now follow planning, approval, bid, construction and inspection.</div>';}
+function renderV8District(){let d=$('districtStaffMarket');if(d){let open=state.district.schools.map((s,i)=>({school:s.name,openings:(i+state.instructionalDay)%4,pressure:i===0?'Your building':i%2?'Competitive':'Stable'}));d.innerHTML=open.map(x=>`<div class="position-row"><span><strong>${x.school}</strong><br><span class="muted">${x.openings} current/recent openings</span></span><span class="badge ${x.pressure==='Competitive'?'warn':'info'}">${x.pressure}</span></div>`).join('')+'<div class="compact-item">Candidates and employees can be influenced by openings elsewhere in the district; internal transfers become more likely during spring staffing.</div>';}}
+function updateAchievements(){
+ let a=state.achievements;a.fullyStaffed=a.fullyStaffed||state.positions.every(p=>p.filled>=p.authorized);a.perfectOpening=a.perfectOpening||(state.instructionalDay<=5&&state.workOrders.filter(w=>w.status==='Open'&&w.priority==='High').length===0&&state.positions.every(p=>p.filled>=p.authorized));a.growingPains=a.growingPains||(enrollment()/480>=.95);a.homegrown=a.homegrown||activeEmployees().some(e=>e.history?.some(h=>/para/i.test(h))&&e.category==='Teacher');a.veteran=a.veteran||activeEmployees().some(e=>e.yearsInDistrict>=20);a.snowDay=a.snowDay||state.schoolCalendar.closures>0;
+}
+function renderV8Reports(){updateAchievements();let y=$('yearbookBoard');if(y)y.innerHTML=`<div class="yearbook-card"><strong>${state.schoolYear} Lincoln Elementary</strong><span>${enrollment()} students • ${activeEmployees().length} employees • Day ${state.instructionalDay}/180</span><span>Major memories: ${state.schoolHistory.length} • Archived years: ${state.yearArchives.length}</span></div>`+state.yearArchives.slice(0,4).map(a=>`<div class="compact-item"><strong>${a.year}</strong> — ${a.enrollment} students • Building ${a.building}% • ${a.staff} staff</div>`).join('');let b=$('achievementBoard');if(b){let defs=[['fullyStaffed','Fully Staffed','Open the school year with every authorized position filled.'],['homegrown','Homegrown Teacher','A former para becomes a Lincoln teacher.'],['veteran','Twenty Years of Service','Retain an employee for 20 years.'],['growingPains','Growing Pains','Operate above 95% building capacity.'],['snowDay','Snow Day!','Close school due to winter weather.'],['perfectOpening','Perfect Opening','Open with full staffing and no critical work orders.']];b.innerHTML=defs.map(([k,n,d])=>`<div class="achievement ${state.achievements[k]?'unlocked':''}"><strong>${state.achievements[k]?'🏆':'🔒'} ${n}</strong><span>${d}</span></div>`).join('');}}
+function renderV8(){ensureV8State();safeSection('v8students',renderV8Students);safeSection('v8staff',renderV8Staff);safeSection('v8hr',renderV8HR);safeSection('v8ops',renderV8Operations);safeSection('v8finance',renderV8Finance);safeSection('v8district',renderV8District);safeSection('v8reports',renderV8Reports);}
+function runMtssReview(){ensureV8State();let changed=0;state.students.filter(s=>s.status==='Active').forEach(s=>{let old=s.mtss,newTier=(s.reading<55||s.math<55||s.behavior.incidents>=3)?'Tier 3':(s.reading<68||s.math<68||s.behavior.incidents>=1)?'Tier 2':'Tier 1';s.mtss=newTier;if(old!==newTier){changed++;memoryAdd(s,`MTSS review changed support from ${old} to ${newTier}.`);}});toast(`${changed} student support levels changed.`);render();}
+function contractReview(){ensureV8State();let renewed=0;activeEmployees().forEach(e=>{if(e.contractStatus==='Active'){e.renewal=e.performance<70?'Administrative review':'Recommended for renewal';if(e.performance>=70)renewed++;memoryAdd(e,`Spring contract review: ${e.renewal}.`);}});toast(`${renewed} employees recommended for renewal.`);render();}
+function autoCoveragePlan(){simulateCalloffs();state.absences.forEach(a=>{let e=state.employees.find(x=>x.id===a.employeeId);if(e?.pto){e.pto.sick=Math.max(0,e.pto.sick-1);e.pto.used+=1;memoryAdd(e,'Used one sick day.');}});toast('Coverage plan rebuilt using available substitutes.');render();}
+function inspectCustodialZones(){state.custodialZones.forEach(z=>{let avgClean=avg(z.rooms.map(id=>roomById(id)?.cleanliness||90));z.score=Math.round(avgClean);z.status=z.score>=90?'On Track':z.score>=80?'Needs Detail':'Recovery Needed';});toast('Custodial zone inspection completed.');render();}
+function completeDuePM(){let due=state.maintenance.filter(m=>m.status==='Due');if(!due.length)return toast('No preventive maintenance is due today.');due.forEach(m=>{m.lastDay=state.instructionalDay;m.nextDay=state.instructionalDay+m.interval;m.status='Scheduled';state.finance.spentOps+=350;});state.rooms.forEach(r=>r.condition=Math.min(100,r.condition+.4));toast(`${due.length} preventive-maintenance items completed.`);render();}
+function orderLowStock(){let low=state.inventory.filter(i=>i.qty<i.par);if(!low.length)return toast('Inventory is currently above par levels.');let cost=0;low.forEach(i=>{let add=i.par*1.5-i.qty;i.qty+=add;cost+=Math.round(add*(i.id==='CHROME'?325:42));});state.finance.spentOps+=cost;toast(`Low-stock items replenished for ${money(cost)}.`);render();}
+function newCapitalProject(){openModal('Plan Capital Project',`<form id="capitalForm"><div class="form-grid"><label>Project<input id="capitalName" value="Classroom renovation" required></label><label>Estimated Cost<input id="capitalCost" type="number" value="125000" min="1000"></label><label>Initial Stage<select id="capitalStage"><option>Planning</option><option>Board Review</option></select></label></div><div class="actions"><button class="primary">Create Project</button></div></form>`);$('capitalForm').onsubmit=e=>{e.preventDefault();state.capitalProjects.push({id:uid('cap'),name:$('capitalName').value,cost:+$('capitalCost').value,stage:$('capitalStage').value,progress:5,created:state.date});state.schoolHistory.unshift({date:state.date,text:`Capital project entered planning: ${$('capitalName').value}.`});closeModal();render();};}
+function openYearbook(){let staff=activeEmployees().slice(0,16).map(e=>e.name).join(' • ');let events=state.schoolHistory.slice(0,8).map(x=>`<li>${x.text}</li>`).join('');openModal(`${state.schoolYear} Lincoln Yearbook`,`<div class="yearbook-modal"><h2>🏫 Lincoln Elementary</h2><h3>${state.schoolYear}</h3><p><strong>${enrollment()} students • ${activeEmployees().length} staff</strong></p><p>${staff}</p><h3>Year in Review</h3><ul>${events}</ul><p class="muted">This year becomes permanent when the school year closes.</p></div>`);}
+function v8RandomRealLifeEvent(){
+ ensureV8State();if(state.simMinutes<500||state.simMinutes>910)return;
+ let r=Math.random();
+ if(r<.20&&state.techTickets.length<8){let room=pick(state.rooms.filter(x=>x.type==='Classroom'));state.techTickets.unshift({id:uid('tech'),issue:pick(['Interactive display not connecting','Printer offline','Student device cracked','Teacher laptop dock not detecting display']),location:room.id,status:'Open',age:0});if(routineHandled('Devices & classroom technology'))setTimeout(()=>{},0);}
+ else if(r<.38){let fam=pick(state.families);if(fam){memoryAdd(fam,pick(['Office resolved a transportation change.','Family contacted Lincoln about a classroom concern.','Family attended a school event.']));}}
+ else if(r<.52){let e=pick(activeEmployees());if(e&&Math.random()<.25){e.morale=Math.max(45,e.morale-1);memoryAdd(e,'Experienced a demanding school day.');}}
+ else if(r<.66){let s=pick(state.students.filter(x=>x.status==='Active'));if(s&&Math.random()<.35){s.behavior.incidents++;s.behavior.trend=s.behavior.incidents>=3?'Needs support':'Watch';memoryAdd(s,'Behavior incident documented and reviewed by staff.');}}
+ else if(r<.80){let z=pick(state.custodialZones);z.score=Math.max(70,z.score-1);}
+ else {let p=pick(state.capitalProjects);if(p&&p.stage!=='Complete'){p.progress=Math.min(100,p.progress+5);if(p.progress>=100)p.stage='Complete';else if(p.progress>=75)p.stage='Inspection / Closeout';else if(p.progress>=35)p.stage='Construction';else if(p.progress>=15)p.stage='Bid / Procurement';}}
+}
+const renderBeforeV8=render;render=function(){ensureV8State();renderBeforeV8();renderV8();};
+const playableTickBeforeV8=playableTick;playableTick=function(minutes=5){playableTickBeforeV8(minutes);v8DailyProgress(minutes);if(Math.random()<.12)v8RandomRealLifeEvent();render();};
+const openEmployeeBeforeV8=openEmployee;openEmployee=function(id){ensureV8State();let e=state.employees.find(x=>x.id===id);if(!e)return;openModal(e.name,`<div class="app-sheet"><h3>${e.position}</h3><p>${e.assignment} • ${e.fte.toFixed(1)} FTE • ${e.schedule}</p><div class="app-section"><strong>Personnel Profile</strong><p>Age ${e.age} • ${e.experience} yrs experience • ${e.yearsInDistrict} yrs in district<br>${e.degree} • ${e.license}<br>${e.contract} contract • ${money(e.salary*e.fte)}</p></div><div class="app-section"><strong>PTO / Contract</strong><p>Sick ${e.pto.sick.toFixed(1)} days • Personal ${e.pto.personal.toFixed(1)} days • Used ${e.pto.used}<br>Renewal: ${e.renewal}</p></div><div class="app-section"><strong>Performance & Morale</strong><p>Performance ${e.performance}/100 • Morale ${e.morale}/100 • Career: ${e.preferences.career}</p></div><div class="app-section"><strong>Recent Memory</strong>${e.memories.slice(0,6).map(m=>`<div>${m.date}: ${m.text}</div>`).join('')}</div><div class="app-section"><strong>Personnel History</strong>${e.history.map(h=>`<div>${h}</div>`).join('')}</div><div class="app-section"><strong>Assigned Property</strong><p>${e.property.join(', ')}</p></div></div><div class="actions"><button class="secondary" data-eact="eval">Record Walkthrough/Evaluation</button><button class="secondary" data-eact="leave">Add Leave</button><button class="secondary" data-eact="transfer">Transfer Assignment</button></div>`);document.querySelectorAll('[data-eact]').forEach(b=>b.onclick=()=>employeeAction(e,b.dataset.eact));};
+const openStudentBeforeV8=openStudent;openStudent=function(id){ensureV8State();let s=state.students.find(x=>x.id===id),f=state.families.find(x=>x.id===s?.familyId);if(!s)return;openModal(`${s.first} ${s.last}`,`<div class="app-sheet"><h3>Student Record</h3><p>Grade ${s.grade} • Room ${s.room||'Unassigned'} • AM ${s.amTransport||s.transport} • PM ${s.pmTransport||s.transport}</p><div class="app-section"><strong>Family</strong><p>${f?.name||'—'} • ${f?.addressZone||'—'}<br>Residency: ${f?.residency||'—'} • Records: ${f?.recordsStatus||'—'}${f?.pickupNote?`<br>Pickup note: ${f.pickupNote}`:''}</p></div><div class="app-section"><strong>Supports & Services</strong><p>${[s.iep?'IEP':'',s.plan504?'504 Plan':'',s.ell?'ELL':''].filter(Boolean).join(', ')||'None listed'} • ${s.mtss}<br>School health: ${s.medicalSchool}</p></div><div class="app-section"><strong>Current Indicators</strong><p>Attendance ${s.attendance}% • Reading ${s.reading} • Math ${s.math}<br>Behavior incidents ${s.behavior.incidents} • Trend ${s.behavior.trend}</p></div><div class="app-section"><strong>Student Memory</strong>${s.memories.slice(0,6).map(m=>`<div>${m.date}: ${m.text}</div>`).join('')||'<div>No major memories recorded yet.</div>'}</div><div class="app-section"><strong>History</strong>${s.history.map(h=>`<div>${h}</div>`).join('')}</div></div>`);};
+const endSchoolYearBeforeV8=endSchoolYear;endSchoolYear=function(){ensureV8State();let archive={year:state.schoolYear,enrollment:enrollment(),staff:activeEmployees().length,building:buildingScore(),budget:availableOperating(),events:state.schoolHistory.slice(0,12).map(x=>x.text)};state.yearArchives.unshift(archive);activeEmployees().forEach(e=>{memoryAdd(e,`Completed the ${state.schoolYear} school year at Lincoln.`);if(e.educationGoal&&Math.random()<.28){e.degree=e.degree==='BA'?'MA':e.degree;e.educationGoal=null;memoryAdd(e,'Completed an education milestone and updated degree status.');}});endSchoolYearBeforeV8();state.district.career.yearsAsPrincipal=(state.district.career.yearsAsPrincipal||1)+1;state.cafeteria.mealsToday=0;state.transportOps.changesToday=0;state.maintenance.forEach(m=>{m.lastDay=1;m.nextDay=m.interval;m.status='Scheduled'});render();};
+const weatherDecisionBeforeV8=weatherDecision;weatherDecision=function(){weatherDecisionBeforeV8();setTimeout(()=>{document.querySelectorAll('[data-weather]').forEach(b=>{let prior=b.onclick;b.onclick=()=>{let d=b.dataset.weather;if(d==='Closed'){state.schoolCalendar.closures++;state.schoolCalendar.makeupDays++;}if(d==='2-hour Delay')state.schoolCalendar.delays++;if(prior)prior();};});},0);};
+const bindUIBeforeV8=bindUI;bindUI=function(){bindUIBeforeV8();$('mtssReviewBtn')?.addEventListener('click',runMtssReview);$('contractReviewBtn')?.addEventListener('click',contractReview);$('coveragePlanBtn')?.addEventListener('click',autoCoveragePlan);$('inspectZonesBtn')?.addEventListener('click',inspectCustodialZones);$('runPmBtn')?.addEventListener('click',completeDuePM);$('orderSuppliesBtn')?.addEventListener('click',orderLowStock);$('newCapitalProjectBtn')?.addEventListener('click',newCapitalProject);$('yearbookBtn')?.addEventListener('click',openYearbook);};
+const loadBeforeV8=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV8State();toast('V8 saved game loaded.');render();return;}catch(err){console.error(err)}}let v7=localStorage.getItem(V7_SAVE_KEY);if(v7){try{state=JSON.parse(v7);ensureV8State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln from Playable School V7.0 to Real Life School V8.0.'});toast('Your V7 game was upgraded to V8.0. Save now to create a V8 save.');render();return;}catch(err){console.error(err)}}return loadBeforeV8();};
 
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();

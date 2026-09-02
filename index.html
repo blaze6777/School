@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lincoln Elementary — Playable School V7</title>
-<link rel="stylesheet" href="styles.css?v=7.0">
+<title>Lincoln Elementary — Real Life School V8</title>
+<link rel="stylesheet" href="styles.css?v=8.0">
 </head>
 <body>
 <div id="app">
 <header class="topbar">
-  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Playable School • K–6</div><div id="versionBadge" class="version-badge">Version 7.0 • Build 2026-09-02 13:28 ET</div></div>
+  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Real Life School • K–6</div><div id="versionBadge" class="version-badge">Version 8.0 • Build 2026-09-02 14:10 ET</div></div>
   <nav class="nav-tabs" aria-label="Game sections">
     <button class="nav-btn active" data-view="command">🏠 Command</button>
     <button class="nav-btn" data-view="building">🗺️ Building</button>
@@ -108,6 +108,10 @@
     <div class="toolbar"><select id="studentGradeFilter"><option value="all">All Grades</option></select><select id="studentNeedFilter"><option value="all">All Students</option><option value="IEP">IEP</option><option value="504">504 Plan</option><option value="ELL">ELL</option><option value="Attendance">Attendance Concern</option></select><input id="studentSearch" placeholder="Search student or family..."></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Student</th><th>Grade</th><th>Room</th><th>Teacher</th><th>Family</th><th>Transportation</th><th>Supports</th><th>Attendance</th><th>Reading</th><th>Math</th></tr></thead><tbody id="studentTableBody"></tbody></table></div>
   </section>
+  <div class="v8-grid">
+    <section class="card padded"><div class="section-head"><div><h2>Student Life & MTSS</h2><p class="muted">Academic growth, intervention tiers and behavior patterns develop over time.</p></div><button id="mtssReviewBtn" class="secondary">Run MTSS Review</button></div><div id="mtssBoard"></div></section>
+    <section class="card padded"><h2>Family & Records Desk</h2><div id="familyRecordsBoard"></div></section>
+  </div>
 </section>
 
 <section id="view-staff" class="view">
@@ -116,6 +120,10 @@
     <div class="toolbar"><select id="staffCategoryFilter"><option value="all">All Categories</option></select><select id="staffStatusFilter"><option value="all">All Statuses</option><option>Active</option><option>Absent</option><option>Leave</option></select><input id="staffSearch" placeholder="Search employee..."></div>
     <div class="table-wrap"><table class="data-table"><thead><tr><th>Employee</th><th>Position</th><th>FTE</th><th>Assignment</th><th>Schedule</th><th>Experience</th><th>Degree</th><th>License</th><th>Salary</th><th>Status</th></tr></thead><tbody id="staffTableBody"></tbody></table></div>
   </section>
+  <div class="v8-grid">
+    <section class="card padded"><div class="section-head"><div><h2>Careers, Contracts & Memory</h2><p class="muted">Employees remember major decisions and build careers over many years.</p></div><button id="contractReviewBtn" class="secondary">Spring Contract Review</button></div><div id="careerMemoryBoard"></div></section>
+    <section class="card padded"><h2>Delegation</h2><p class="muted">Strong leaders solve routine problems before they reach your desk.</p><div id="delegationBoard"></div></section>
+  </div>
 </section>
 
 <section id="view-hr" class="view">
@@ -124,6 +132,8 @@
     <section class="card padded"><div class="section-head"><div><h2>Vacancies & Applications</h2><p class="muted">Post → apply → interview → references → offer → onboarding.</p></div></div><div id="vacancyBoard"></div></section>
     <section class="card padded"><h2>Leave & Compliance</h2><div id="hrCompliance"></div></section>
     <section class="card padded"><h2>Substitute Pool</h2><div id="subPool"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>PTO & Attendance Banks</h2><p class="muted">Sick/personal balances, attendance patterns and coverage pressure.</p></div><button id="coveragePlanBtn" class="secondary">Auto-Build Coverage Plan</button></div><div id="ptoBoard"></div></section>
+    <section class="card padded"><h2>Hiring Clearance</h2><div id="clearanceBoard"></div></section>
   </div>
 </section>
 
@@ -133,6 +143,10 @@
     <section class="card padded"><div class="section-head"><div><h2>Facilities & Work Orders</h2><p class="muted">Room condition, cleanliness, temperature and maintenance queue.</p></div><button id="newWorkOrderBtn" class="secondary">New Work Order</button></div><div id="workOrderBoard"></div></section>
     <section class="card padded"><h2>Student Services Workload</h2><div id="servicesBoard"></div></section>
     <section class="card padded"><h2>School Calendar</h2><div id="calendarBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Custodial Zones</h2><p class="muted">Every custodian owns a real part of the building.</p></div><button id="inspectZonesBtn" class="secondary">Inspect Zones</button></div><div id="custodialZones"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Preventive Maintenance & Inspections</h2><p class="muted">Scheduled work reduces the chance of bigger failures.</p></div><button id="runPmBtn" class="secondary">Complete Due PM</button></div><div id="pmBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Inventory, Technology & Property</h2><p class="muted">Supplies and equipment now have quantities, assignments and replacement cycles.</p></div><button id="orderSuppliesBtn" class="secondary">Order Low Stock</button></div><div id="inventoryBoard"></div></section>
+    <section class="card padded"><h2>Cafeteria & Transportation Operations</h2><div id="dailyOpsBoard"></div></section>
   </div>
 </section>
 
@@ -142,6 +156,7 @@
     <section class="card padded"><h2>Payroll by Category</h2><div id="payrollCategories"></div></section>
     <section class="card padded"><div class="section-head"><div><h2>Purchase Orders</h2><p class="muted">Committed funds remain unavailable until closed.</p></div><button id="newPurchaseBtn" class="secondary">Create PO</button></div><div id="purchaseOrders"></div></section>
     <section class="card padded"><h2>Five-Year Outlook</h2><div id="forecastBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Capital Projects</h2><p class="muted">Planning → board → bid → construction → inspection → completion.</p></div><button id="newCapitalProjectBtn" class="secondary">Plan Project</button></div><div id="capitalProjectsBoard"></div></section>
   </div>
 </section>
 
@@ -169,6 +184,7 @@
       </section>
       <section class="card padded"><h2>District Schools</h2><div id="districtSchools" class="district-school-grid"></div></section>
       <section class="card padded"><h2>Neighborhood & Enrollment Outlook</h2><div id="districtNeighborhoods"></div></section>
+      <section class="card padded"><h2>District Staffing Market</h2><div id="districtStaffMarket"></div></section>
     </div>
     <aside class="stack">
       <section class="panel"><h2>District Departments</h2><div id="districtDepartments" class="panel-body compact-list"></div></section>
@@ -184,6 +200,8 @@
     <section class="card padded"><h2>School History</h2><p class="muted">Major decisions and milestones become part of Lincoln's permanent story.</p><div id="schoolHistoryBoard" class="compact-list"></div></section>
     <section class="card padded"><h2>Community & PTO</h2><div id="communityBoard"></div></section>
     <section class="card padded"><h2>Summer Readiness</h2><div id="summerReadiness"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Yearbook & Archives</h2><p class="muted">Lincoln remembers completed school years, staff milestones and major events.</p></div><button id="yearbookBtn" class="secondary">Open Current Yearbook</button></div><div id="yearbookBoard"></div></section>
+    <section class="card padded"><h2>Realistic Achievements</h2><div id="achievementBoard"></div></section>
   </div>
 </section>
 </main>
@@ -194,7 +212,7 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-card"><div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="icon-btn" aria-label="Close">✕</button></div><div id="modalBody" class="modal-body"></div></div>
 </div>
-<script src="app.js?v=7.0"></script>
+<script src="app.js?v=8.0"></script>
 <button id="phoneBtn" class="phone-fab" title="Principal phone">📱</button>
 <div id="phonePanel" class="phone-panel hidden"><div class="phone-head"><strong>Principal Phone</strong><button id="phoneCloseBtn">✕</button></div><div class="phone-tabs"><button data-phone="alerts">🔔 Alerts</button><button data-phone="messages">💬 Messages</button><button data-phone="calendar">📅 Calendar</button></div><div id="phoneBody" class="phone-body"></div></div>
 <div id="walkModal" class="walk-modal hidden"><div class="walk-card"><div class="section-head"><div><h2>Walk Building</h2><p id="walkClock" class="muted"></p></div><button id="walkCloseBtn">✕</button></div><div id="walkLocation"></div><div id="walkPeople"></div><div id="walkActions" class="walk-actions"></div></div></div>
