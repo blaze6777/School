@@ -1,5 +1,5 @@
-const GAME_VERSION="9.0";
-const GAME_BUILD="2026-09-03 12:20 ET";
+const GAME_VERSION="9.0.1";
+const GAME_BUILD="2026-09-03 12:48 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
@@ -1378,7 +1378,7 @@ function ensureV89State(){
  S.intentForms=S.intentForms||[];S.studentTeachers=S.studentTeachers||[];S.interns=S.interns||[];S.cadets=S.cadets||[];S.universities=S.universities||[
  {name:'Indiana State University',relationship:'Active'},{name:'Ball State University',relationship:'Active'},{name:'Grace College',relationship:'Active'},{name:'Purdue Fort Wayne',relationship:'Developing'}];
  S.mentorships=S.mentorships||[];S.transferRequests=S.transferRequests||[];S.internalMoves=S.internalMoves||[];S.longTermLeaves=S.longTermLeaves||[];S.preferredSubs=S.preferredSubs||[];
- S.alumniApplicants=S.alumniApplicants||[];S.formerEmployees=S.formerEmployees||[];S.staffingBoard=S.staffingBoard||[];S.recruiting=S.recruiting||{reputation:'Positive',jobFairs:0,hardToFill:['Special Education','School Psychologist','Speech / Language','Bus Driver','Substitute Teacher']};
+ S.alumniApplicants=S.alumniApplicants||[];S.formerEmployees=S.formerEmployees||[];S.staffingBoard=S.staffingBoard||[];S.recruiting=S.recruiting||{reputation:'Positive',jobFairs:0};S.recruiting.hardToFill=Array.isArray(S.recruiting.hardToFill)?S.recruiting.hardToFill:['Special Education','School Psychologist','Speech / Language','Bus Driver','Substitute Teacher'];
  S.milestones=S.milestones||[];S.succession=S.succession||[];S.lastSpringYear=S.lastSpringYear||null;S.lastAlumniYear=S.lastAlumniYear||null;
  activeEmployees().forEach(e=>{e.staffingProfile=e.staffingProfile||{gradePreferences:[],intent:'Returning',degree:pick(["Bachelor's","Master's","Master's +30"]),certifications:[],serviceYears:e.experience||0,contractStatus:(e.experience||0)<3?'Probationary':'Established',commute:rnd(5,42),leadershipRoles:[],mentorHistory:[],rehire:true};});
  seedStaffingBoard();
@@ -1449,11 +1449,12 @@ const loadV89Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(
 /* ================= V9.0 CONNECTED SCHOOL ================= */
 function ensureV90State(){
  ensureV89State();state.version=9.0;state.connected90=state.connected90||{};let C=state.connected90;
- C.social=C.social||{staffGroups:[],rumors:[],studentConnections:[]};C.familyHistory=C.familyHistory||{};C.subs=C.subs||[];C.office=C.office||{queue:[],resolvedToday:0};
- C.leaderDays=C.leaderDays||{};C.meetings=C.meetings||[];C.access=C.access||[];C.requests=C.requests||[];C.orders=C.orders||[];C.fieldTrips=C.fieldTrips||[];
- C.visitors=C.visitors||[];C.budgets=C.budgets||{classroom:state.rooms.filter(r=>r.grade).map(r=>({room:r.id,balance:350})),grade:GRADES.map(g=>({grade:g,balance:900})),pto:6500,building:18000,grants:[]};
+ C.social=C.social||{};C.social.staffGroups=Array.isArray(C.social.staffGroups)?C.social.staffGroups:[];C.social.rumors=Array.isArray(C.social.rumors)?C.social.rumors:[];C.social.studentConnections=Array.isArray(C.social.studentConnections)?C.social.studentConnections:[];
+ C.familyHistory=C.familyHistory||{};C.subs=Array.isArray(C.subs)?C.subs:[];C.office=C.office||{};C.office.queue=Array.isArray(C.office.queue)?C.office.queue:[];C.office.resolvedToday=C.office.resolvedToday||0;
+ C.leaderDays=C.leaderDays||{};C.meetings=Array.isArray(C.meetings)?C.meetings:[];C.access=Array.isArray(C.access)?C.access:[];C.requests=Array.isArray(C.requests)?C.requests:[];C.orders=Array.isArray(C.orders)?C.orders:[];C.fieldTrips=Array.isArray(C.fieldTrips)?C.fieldTrips:[];
+ C.visitors=Array.isArray(C.visitors)?C.visitors:[];C.budgets=C.budgets||{};C.budgets.classroom=Array.isArray(C.budgets.classroom)?C.budgets.classroom:(state.rooms||[]).filter(r=>r.grade).map(r=>({room:r.id,balance:350}));C.budgets.grade=Array.isArray(C.budgets.grade)?C.budgets.grade:GRADES.map(g=>({grade:g,balance:900}));C.budgets.pto=Number.isFinite(C.budgets.pto)?C.budgets.pto:6500;C.budgets.building=Number.isFinite(C.budgets.building)?C.budgets.building:18000;C.budgets.grants=Array.isArray(C.budgets.grants)?C.budgets.grants:[];
  C.enrollmentPressure=C.enrollmentPressure||{projection:enrollment(),capacity:state.rooms.filter(r=>r.grade).length*28,status:'Stable',addition:null};
- C.incidents=C.incidents||[];C.staffPrep=C.staffPrep||{};C.today=C.today||{generated:false};
+ C.incidents=Array.isArray(C.incidents)?C.incidents:[];C.staffPrep=C.staffPrep||{};C.today=C.today||{generated:false};
  activeEmployees().forEach(e=>{e.familyLife=e.familyLife||{note:pick(['No known change','Family schedule stable','Completing professional coursework','Balancing family commitments']),lastChange:null};});
  seedSocialWorld();seedLeadershipDays();
 }
