@@ -1,24 +1,32 @@
-# Lincoln Elementary Simulator — V9.1 Principal Experience
-Build 2026-09-03 16:10 ET.
+# Lincoln Elementary Simulator — V9.2 Relationships, Memory & Continuity
+Build 2026-09-03 17:18 ET.
 
-Major realism pass built on V9.0.7:
-- Start My Day at 6:45 AM in the principal office.
-- Secretary/front-office gatekeeper with Normal, Protect Time, and Open Door modes.
-- School radio traffic; most messages are informational while urgent admin calls become alerts.
-- Office traffic for deliveries, attendance, routine family calls, visitors, dismissal changes, and escalations.
-- Student office/discipline scenes with student perspective and multiple responses.
-- Persistent principal promises/follow-up tasks.
-- Nurse escalation scenes.
-- Substitute check-in lifecycle with badge and lesson-plan handoff.
-- Meeting workflow with attend/delegate/reschedule and time cost.
-- Field-trip logistics and off-campus status.
-- Weather operations decisions.
-- Purchasing requests that create orders tied to rooms.
-- School tradition planning.
-- Staff life/career moments.
-- Morning arrival and dismissal radio/office activity.
-- Principal Mode hub plus Command Center Principal Experience panel.
-- Existing V9.0.7 stability, slower clock, deeper parent calls, phone, tasks, classroom and facilities interactions retained.
-- V9.1 uses its own save slot while still falling back through the existing V9.0 save loader for upgrades.
+This release adds the full next realism layer discussed after V9.1.1. The focus is continuity: people remember interactions, promises matter, and school systems keep moving without the principal personally touching everything.
 
-This is a broad first integrated pass. Some systems are intentionally lightweight rather than a full district-grade simulation, but the actions now connect to time, history, tasks, rooms, people, orders, and follow-up where practical.
+Major additions:
+- Staff relationship history with repeated contacts, promises kept, and a developing/established/strong working relationship description instead of a hidden friendship score.
+- Family relationship/contact history, including repeated principal interactions and follow-through.
+- Persistent principal promises/follow-ups. Promises can be completed later and are recorded in the relationship history.
+- Secretary briefings that surface pending events, promises, and upcoming calendar commitments.
+- AP and counselor autonomy for routine discipline, attendance, dismissal, peer conflict, anxiety, and family-support work.
+- Classroom culture profiles that become more useful through walkthroughs and conversations.
+- Walkthrough/evaluation evidence history connected to teacher relationships and classroom culture.
+- Lunch-with-students and recess-presence interactions.
+- Morning arrival board with buses, car riders, breakfast counts, and principal arrival supervision.
+- Dismissal board with buses, pickup changes, late routes, and supervision.
+- After-school building view with clubs, teachers still on site, custodial progress, and night-shift logs.
+- Substitute-quality consequences, including rough days that can generate additional office referrals.
+- Evidence-based teacher evaluation conferences.
+- Candidate building tours, reference calls, and offer discussions.
+- Full-year school calendar covering family events, traditions, testing, PTO, and district milestones.
+- Testing-season mode affecting rooms, devices, specials, small groups, and coverage.
+- PTO meeting/proposal decisions.
+- School newsletter, website, social update, and marquee publishing.
+- Fire/tornado/lockdown drill actions.
+- Very rare operational/emergency event support.
+- Building projects that progress from request to order/installation and can become visible room equipment.
+- Summer operations mode for staffing, classroom moves, deep cleaning, construction, registration, and opening-day prep.
+- Generational records for graduates, multi-child/legacy families, retirement signals, and future former-student applicant possibilities.
+- Existing V9.1.1 teacher/cook/specials check-ins, pending-event queue, phone, tasks, slower school day, and interaction fixes are retained.
+
+V9.2 uses a new save slot and falls back through the V9.1/V9.0 loaders so existing progress can be upgraded. The code passed JavaScript syntax, top-level VM startup, and ZIP integrity checks. A full browser runtime test was not performed.

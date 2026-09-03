@@ -73,3 +73,9 @@
 
 /* V9.1 Principal Experience */
 .principal-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}.principal-hub-grid button{min-height:70px;font-weight:700}.v91-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.v91-strip button{padding:12px}.v91-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.principal-start{max-width:760px}.principal-start h2{margin-bottom:4px}@media(max-width:800px){.v91-strip,.v91-columns{grid-template-columns:1fr 1fr}}@media(max-width:520px){.v91-strip,.v91-columns{grid-template-columns:1fr}}
+
+/* V9.1.1 Interaction queue */
+.room-person-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:5px 0}.room-person-row button{padding:5px 8px}.pending-event-row{width:100%;text-align:left;display:grid;grid-template-columns:1fr auto;gap:4px 12px;padding:12px;margin:7px 0}.pending-event-row small{grid-column:1/-1;font-weight:400}.pending-event-row span{font-size:.85rem;opacity:.75}
+
+/* V9.2 Relationships & Memory */
+#v92Relationships .v91-strip button strong{display:block;font-size:1.25rem;margin-top:4px}.calendar-day{display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(127,127,127,.18)}.calendar-day small{opacity:.65}.principal-hub-grid button{cursor:pointer}
