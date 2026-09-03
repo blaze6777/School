@@ -1,4 +1,6 @@
-# Lincoln Elementary Simulator — V9.0.1 Hotfix
-Build 2026-09-03 12:48 ET.
+# Lincoln Elementary Simulator — V9.0.2 Hotfix
+Build 2026-09-03 13:12 ET.
 
-Hotfix for the V9.0 startup recovery error `Cannot read properties of undefined (reading 'map')`. The V9.0 migration now defensively repairs partially-created Connected School and Staffing data structures (social-world arrays, office queues, leadership data, budgets, visitors, requests, orders, trips, incidents and hard-to-fill staffing lists) before rendering. Existing V8.9/V9.0 progress is preserved.
+Second startup-repair hotfix. This version runs a broad legacy-save repair pass before the entire V8.1–V9.0 migration/render chain. It normalizes missing arrays and nested structures across students, families, employees, applications, substitutes, PTO, neighborhoods, world data, operations, People & Presence, Generations & Staffing, and Connected School. The startup banner now also displays the first stack location if any error remains, making the exact failing function visible instead of only showing the message.
+
+Existing progress is preserved.

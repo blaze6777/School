@@ -1,5 +1,5 @@
-const GAME_VERSION="9.0.1";
-const GAME_BUILD="2026-09-03 12:48 ET";
+const GAME_VERSION="9.0.2";
+const GAME_BUILD="2026-09-03 13:12 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
@@ -744,7 +744,7 @@ function bindUI(){
 function startupFailure(err){
  console.error('Lincoln startup failed',err);
  const app=document.getElementById('app');if(!app)return;
- const box=document.createElement('div');box.className='startup-error';box.innerHTML=`<strong>Lincoln recovered from a startup problem.</strong><br>${String(err?.message||err)}<br><small>Tabs remain available; use Reports → System Check if a section still has an issue.</small>`;app.prepend(box);
+ const box=document.createElement('div');box.className='startup-error';const where=err?.stack?String(err.stack).split('\n').slice(0,3).join(' | '):'';box.innerHTML=`<strong>Lincoln recovered from a startup problem.</strong><br>${String(err?.message||err)}<br><small>${where||'No stack location available.'}</small><br><small>Tabs remain available; use Reports → System Check if a section still has an issue.</small>`;app.prepend(box);
 }
 function initApp(){
  try{
@@ -1447,7 +1447,24 @@ const loadV89Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(
 
 
 /* ================= V9.0 CONNECTED SCHOOL ================= */
+function repairStateCollectionsV902(){
+ if(!state||typeof state!=='object')return;
+ const arr=k=>{if(!Array.isArray(state[k]))state[k]=[]};
+ ['rooms','students','families','employees','positions','workOrders','applications','substitutes','meetings','observations','staffRumors','studentTeachers','schoolLifeEvents','alumni','registrationQueue','placementPlans','principalTasks','interruptions','storylines','dailyBrief','subPool','staffMemories','familyMemories','subCoverage'].forEach(arr);
+ state.pto=state.pto||{};if(!Array.isArray(state.pto.officers))state.pto.officers=[];if(!Number.isFinite(state.pto.funds))state.pto.funds=0;
+ state.neighborhoods=Array.isArray(state.neighborhoods)?state.neighborhoods:[];
+ state.world=state.world||{};['schoolGoals','capital','neighborhoods','districtLeaders','traditions','visitors','deliveries','grants'].forEach(k=>{if(!Array.isArray(state.world[k]))state.world[k]=[]});
+ state.ops=state.ops||{};['calendar','coverage','duties','custodialRoutes','officeQueue','drills','hiddenSignals','hrPipeline','pm'].forEach(k=>{if(!Array.isArray(state.ops[k]))state.ops[k]=[]});
+ state.presence=state.presence||{};state.presence.morning=state.presence.morning||{};if(!Array.isArray(state.presence.morning.events))state.presence.morning.events=[];
+ state.presence.staffLounge=Array.isArray(state.presence.staffLounge)?state.presence.staffLounge:[];
+ state.presence.desk=state.presence.desk||{};['stickyNotes','voicemail','papers'].forEach(k=>{if(!Array.isArray(state.presence.desk[k]))state.presence.desk[k]=[]});
+ state.staffing89=state.staffing89||{};['intentForms','studentTeachers','interns','cadets','universities','mentorships','transferRequests','internalMoves','longTermLeaves','preferredSubs','alumniApplicants','formerEmployees','staffingBoard','milestones','succession'].forEach(k=>{if(!Array.isArray(state.staffing89[k]))state.staffing89[k]=[]});
+ state.connected90=state.connected90||{};state.connected90.social=state.connected90.social||{};['staffGroups','rumors','studentConnections'].forEach(k=>{if(!Array.isArray(state.connected90.social[k]))state.connected90.social[k]=[]});
+ ['subs','meetings','access','requests','orders','fieldTrips','visitors','incidents'].forEach(k=>{if(!Array.isArray(state.connected90[k]))state.connected90[k]=[]});
+ state.connected90.office=state.connected90.office||{};if(!Array.isArray(state.connected90.office.queue))state.connected90.office.queue=[];
+}
 function ensureV90State(){
+ repairStateCollectionsV902();
  ensureV89State();state.version=9.0;state.connected90=state.connected90||{};let C=state.connected90;
  C.social=C.social||{};C.social.staffGroups=Array.isArray(C.social.staffGroups)?C.social.staffGroups:[];C.social.rumors=Array.isArray(C.social.rumors)?C.social.rumors:[];C.social.studentConnections=Array.isArray(C.social.studentConnections)?C.social.studentConnections:[];
  C.familyHistory=C.familyHistory||{};C.subs=Array.isArray(C.subs)?C.subs:[];C.office=C.office||{};C.office.queue=Array.isArray(C.office.queue)?C.office.queue:[];C.office.resolvedToday=C.office.resolvedToday||0;
