@@ -1,9 +1,14 @@
-const GAME_VERSION="8.1";
-const GAME_BUILD="2026-09-02 14:32 ET";
+const GAME_VERSION="9.0";
+const GAME_BUILD="2026-09-03 12:20 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
-const SAVE_KEY="lincolnElementarySimulatorLivingWorldV85";
+const SAVE_KEY="lincolnElementarySimulatorConnectedSchoolV90";
+const V89_SAVE_KEY="lincolnElementarySimulatorGenerationsStaffingV89";
+const V88_SAVE_KEY="lincolnElementarySimulatorPeoplePresenceV88";
+const V87_SAVE_KEY="lincolnElementarySimulatorRealOperationsV87";
+const V86_SAVE_KEY="lincolnElementarySimulatorVisualCampusV86";
+const V851_SAVE_KEY="lincolnElementarySimulatorLivingWorldV85";
 const V84_SAVE_KEY="lincolnElementarySimulatorSchoolDayV84";
 const V83_SAVE_KEY="lincolnElementarySimulatorLivingBuildingV83";
 const V82_SAVE_KEY="lincolnElementarySimulatorStudentsV82";
@@ -1107,7 +1112,7 @@ function liveRoomSummary(id){let p=peopleAt(id);return`${p.students.length} stud
 function v83RenderMap(){ensureV83State();let map=$('schoolMap');if(!map)return;map.innerHTML='';for(const [id,name,type,col,row,w,h] of ROOM_LAYOUT){let b=document.createElement(type==='circulation'?'div':'button');b.className=`room-map ${type}`;b.style.gridColumn=`${col}/span ${w}`;b.style.gridRow=`${row}/span ${h}`;if(type==='circulation'){b.innerHTML=`<span class="rname">${name}</span>`;map.appendChild(b);continue;}let r=roomById(id);if(!r)continue;let sev=roomSeverity(r);if(sev)b.classList.add(sev);let occ=peopleAt(id),t=teacherForRoom(id),activity=liveActivityForRoom(r);if(occ.students.length)b.classList.add('occupied-now');if(state.principalLocation===id)b.classList.add('principal-here');b.innerHTML=`<span class="rid">${id}</span><span class="rname">${r.grade?`Grade ${r.grade}`:name}</span>${r.grade?`<span class="teacher-map">${t?t.name:'VACANT'}</span>`:''}<span class="live-activity">${activity}</span><span class="live-count">👥 ${occ.students.length+occ.staff.length}${state.principalLocation===id?' • ⭐ YOU':''}</span>`;b.onclick=()=>{state.selectedRoom=id;renderBuilding();};map.appendChild(b);}if($('capacityChip'))$('capacityChip').textContent=`${mins12(state.simMinutes)} • ${schoolPhase()} • Enrollment ${enrollment()} / 480`;v83RoomInspector();}
 function v83RoomInspector(){let box=$('roomInspector'),id=state.selectedRoom;if(!box)return;if(!id){box.innerHTML='<span class="muted">Select a room to see the live school.</span>';return;}let r=roomById(id);if(!r)return;let p=peopleAt(id),t=teacherForRoom(id);box.innerHTML=`<h3>${id} — ${r.name}${r.grade?` / Grade ${r.grade}`:''}</h3><div class="live-room-banner"><strong>${liveActivityForRoom(r)}</strong><span>${mins12(state.simMinutes)} • ${liveRoomSummary(id)}</span></div><div class="inspector-grid"><div class="inspector-stat"><span>Students Here</span><strong>${p.students.length}</strong></div><div class="inspector-stat"><span>Staff Here</span><strong>${p.staff.length}</strong></div><div class="inspector-stat"><span>Clean</span><strong>${r.cleanliness}%</strong></div><div class="inspector-stat"><span>Temp</span><strong>${r.temp}°F</strong></div></div>${r.grade?`<div class="compact-item"><strong>${t?t.name:'Vacant classroom'}</strong><br>${t?`${t.position} • ${t.experience} yrs experience`:'No teacher assigned'}</div>`:''}<div class="live-people-list"><strong>Currently here</strong>${p.staff.slice(0,6).map(x=>`<div>👩‍🏫 ${x.name} — ${x.position}</div>`).join('')}${p.students.slice(0,10).map(x=>`<div>🎒 ${x.first} ${x.last} — Grade ${x.grade}</div>`).join('')}${p.students.length>10?`<div class="muted">+ ${p.students.length-10} more students</div>`:''}</div><div class="inspector-actions"><button class="primary" id="v83walk">🚶 Walk Here</button>${r.grade&&t?`<button class="primary" id="v83observe">👀 Observe Class</button><button class="secondary" id="v83talk">💬 Talk to ${t.name.split(' ')[0]}</button>`:''}<button class="secondary" id="inspectWO">Create Work Order</button>${r.grade?`<button class="secondary" id="inspectRoster">View Roster</button>`:''}</div>`;$('v83walk').onclick=()=>walkPrincipalTo(id);if($('v83observe'))$('v83observe').onclick=()=>v83Observe(t,id);if($('v83talk'))$('v83talk').onclick=()=>{state.principalLocation=id;state.simMinutes=Math.min(1080,state.simMinutes+10);openConversation(t)};$('inspectWO').onclick=()=>openWorkOrderModal(id);if($('inspectRoster'))$('inspectRoster').onclick=()=>openRoster(id);}
 function walkPrincipalTo(id){ensureV83State();let from=state.principalLocation;state.principalLocation=id;state.simMinutes=Math.min(1080,state.simMinutes+4);state.liveBuilding.movementLog.unshift({date:state.date,time:mins12(state.simMinutes),from,to:id});toast(`You walked to ${locationLabel(id)}.`);render();}
-function v83Observe(t,id){let r=roomById(id),activity=liveActivityForRoom(r);if(!peopleAt(id).students.length){toast('The class is not currently in the room.');return;}state.principalLocation=id;state.simMinutes=Math.min(1080,state.simMinutes+20);if(typeof conductObservation==='function')return conductObservation(t.id,'Walkthrough');if(typeof startObservation==='function')return startObservation(t.id,'Walkthrough');openModal(`Classroom Walkthrough — ${t.name}`,`<p><strong>${activity}</strong> • ${id}</p><p>${pick(['Students were actively engaged in the lesson and classroom routines were evident.','The lesson objective was clear; several students needed additional redirection.','Teacher used questioning and checks for understanding throughout the lesson.','Small-group differentiation was visible and transitions were efficient.'])}</p><p class="muted">20 minutes added to the principal calendar.</p>`);}
+function v83Observe(t,id){let r=roomById(id),activity=liveActivityForRoom(r);if(!peopleAt(id).students.length){toast('The class is not currently in the room.');return;}state.principalLocation=id;if(typeof observeTeacher==='function')return observeTeacher(t,false);state.simMinutes=Math.min(1080,state.simMinutes+12);openModal(`Classroom Walkthrough — ${t.name}`,`<p><strong>${activity}</strong> • ${id}</p><p>${pick(['Students were actively engaged in the lesson and classroom routines were evident.','The lesson objective was clear; several students needed additional redirection.','Teacher used questioning and checks for understanding throughout the lesson.','Small-group differentiation was visible and transitions were efficient.'])}</p><p class="muted">12 minutes added to the principal calendar.</p>`);}
 const renderBuildingV83Old=renderBuilding;renderBuilding=function(){v83RenderMap();};
 const renderV83Old=render;render=function(){ensureV83State();renderV83Old();if(document.querySelector('#view-building.active'))v83RenderMap();};
 const loadV83Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV83State();toast('V8.3 Living Building save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V82_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV83State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.3 Living Building.'});toast('Your V8.2 school was upgraded to V8.3.');render();return;}catch(e){console.error(e)}}return loadV83Old();};
@@ -1124,7 +1129,7 @@ function maybeStoryline(){ensureV84State();if(state.storylines.filter(x=>x.statu
 function advanceStories(){ensureV84State();state.storylines.filter(x=>x.status==='Open').forEach(x=>{x.age++;if(x.age===2)x.stage=`Follow-up: ${x.stage} Additional information is now available.`;if(x.age>=5&&Math.random()<.45){x.status='Resolved';state.schoolHistory.unshift({date:state.date,text:`Resolved storyline: ${x.title}.`});}});}
 function overnightSchool(){ensureV84State();let calloffs=activeEmployees().filter(e=>e.status==='Active'&&Math.random()<.018);calloffs.forEach(e=>{e.status='Absent';let sub=pick(state.subPool.filter(s=>s.reliability>80));if(e.category==='Teacher'&&sub)addTask(`${e.name} absent — ${sub.name} tentatively accepted coverage`,'7:30 AM','High');});state.rooms.forEach(r=>{if(r.cleanliness<92)r.cleanliness=clamp(r.cleanliness+rnd(5,12),0,100)});advanceStories();v84MorningBrief();}
 const playableTickV84Old=playableTick;playableTick=function(minutes=5){playableTickV84Old(minutes);maybeInterrupt();maybeStoryline();};
-const finishDayV84Old=finishSchoolDay;finishSchoolDay=function(){finishDayV84Old();overnightSchool();};
+const finishDayV84Old=finishLivingDay;finishLivingDay=function(){finishDayV84Old();overnightSchool();};
 const renderV84Old=render;render=function(){ensureV84State();renderV84Old();v84Render();};
 const loadV84Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV84State();toast('V8.4 School Day save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V83_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV84State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.4 School Day.'});v84MorningBrief();toast('Your V8.3 school was upgraded to V8.4.');render();return;}catch(e){console.error(e)}}return loadV84Old();};
 
@@ -1146,6 +1151,372 @@ const overnightV85Old=overnightSchool;overnightSchool=function(){overnightV85Old
 const yearV85Old=endSchoolYear;endSchoolYear=function(){v85AnnualAging();yearV85Old();};
 const renderV85Old=render;render=function(){ensureV85State();renderV85Old();v85SubScramble();v85RenderWorld();};
 const loadV85Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV85State();toast('V8.5 Living World save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V84_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV85State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.5 Living World.'});v85Weather();toast('Your V8.4 school was upgraded to V8.5.');render();return;}catch(e){console.error(e)}}return loadV85Old();};
+
+
+
+/* ================= V8.6 VISUAL CAMPUS ================= */
+function ensureV86State(){ensureV85State();state.version=8.6;state.visualCampus=state.visualCampus||{zoom:'building'};state.classroomVisuals=state.classroomVisuals||{};state.rooms.filter(r=>r.grade).forEach((r,i)=>{state.classroomVisuals[r.id]=state.classroomVisuals[r.id]||{theme:['Reading Garden','Bright & Organized','STEM Lab','Calm Corner','Community Classroom','Creative Studio'][i%6],rug:i%3!==0,plants:i%4===0,library:3+(i%4),studentWork:clamp(Math.floor(((parseInt(state.date.split('-')[1]||9)-8)*18)+rnd(8,20)),5,95),layout:['Pods','Rows','U-Shape','Flexible Tables'][i%4]};});}
+function v86SeasonClass(){let s=v85Season().toLowerCase();return `season-${s}`;}
+function v86RoomDecor(r,t){if(!r.grade)return '';let v=state.classroomVisuals[r.id],month=parseInt(state.date.split('-')[1]||9),season=v85Season();let seasonal=season==='Fall'?'🍂':season==='Winter'?'❄️':season==='Spring'?'🌷':'☀️';let art=v.studentWork>65?'🖼️ 🖼️ 🖍️':v.studentWork>30?'🖼️ 🖍️':'📌';return `<div class="mini-room-scene"><div class="mini-board">▭ ${seasonal}</div><div class="mini-wall">${art}</div><div class="mini-furniture">${v.rug?'▰ ':''}${v.plants?'🪴 ':''}📚 ${v.layout==='Pods'?'▦ ▦':v.layout==='Rows'?'▤ ▤':'▥'}</div></div>`;}
+function v86CampusPanel(){let view=$('view-building');if(!view)return;let panel=$('v86CampusPanel');if(!panel){panel=document.createElement('section');panel.id='v86CampusPanel';panel.className='card padded visual-campus-card';view.insertBefore(panel,view.firstChild);}let W=state.world,season=v85Season(),time=state.simMinutes;let cars=clamp(Math.floor((time-390)/4),0,42),buses=(time>=450&&time<=500)||(time>=850&&time<=900)?rnd(3,7):0,play=(time>=660&&time<=810)&&!['Rain','Snow','Thunderstorms'].includes(W.weather.condition);panel.className=`card padded visual-campus-card ${v86SeasonClass()} ${time<430||time>1050?'night-campus':''}`;panel.innerHTML=`<div class="section-head"><div><h2>Lincoln Campus</h2><p class="muted">${season} • ${W.weather.condition} • ${mins12(time)}</p></div><div class="zoom-controls"><button class="secondary" id="zoomCampus">🌳 Campus</button><button class="primary" id="zoomBuilding">🏫 Building</button><button class="secondary" id="zoomRoom">🪑 Selected Room</button></div></div><div class="campus-scene"><div class="campus-sky">${W.weather.condition==='Rain'?'🌧️':W.weather.condition==='Snow'?'🌨️':W.weather.condition==='Cloudy'?'☁️':'☀️'}</div><div class="school-shell"><div class="school-sign">LINCOLN ELEMENTARY<br><small>HOME OF THE LIONS</small></div><div class="school-windows">${Array.from({length:18},(_,i)=>`<i class="${time>420&&time<1020?'lit':''}"></i>`).join('')}</div></div><div class="parking">🚗 ${'🚙 '.repeat(Math.ceil(cars/6))}<span>${cars} staff/visitor cars</span></div><div class="bus-loop">🚌 ${'🚌 '.repeat(buses)}<span>${buses?`${buses} buses at campus`:'Bus loop clear'}</span></div><div class="playground">${play?'🛝 ⚽ 🧒 🧒 🧒 🧒':'🛝'}<span>${play?'Recess in progress':'Playground quiet'}</span></div></div>`;$('zoomCampus').onclick=()=>{state.visualCampus.zoom='campus';$('schoolMap').classList.add('map-campus-focus');};$('zoomBuilding').onclick=()=>{state.visualCampus.zoom='building';$('schoolMap').classList.remove('map-campus-focus','map-room-focus');};$('zoomRoom').onclick=()=>{state.visualCampus.zoom='room';$('schoolMap').classList.add('map-room-focus');};}
+function v86RenderMap(){ensureV86State();let map=$('schoolMap');if(!map)return;map.innerHTML='';map.classList.toggle('map-room-focus',state.visualCampus.zoom==='room');for(const [id,name,type,col,row,w,h] of ROOM_LAYOUT){let b=document.createElement(type==='circulation'?'div':'button');b.className=`room-map ${type}`;b.style.gridColumn=`${col}/span ${w}`;b.style.gridRow=`${row}/span ${h}`;if(type==='circulation'){b.innerHTML=`<span class="rname">${name}</span><span class="hall-traffic">${state.simMinutes>450&&state.simMinutes<900?'•  •  •':''}</span>`;map.appendChild(b);continue;}let r=roomById(id);if(!r)continue;let occ=peopleAt(id),t=teacherForRoom(id),activity=liveActivityForRoom(r),sev=roomSeverity(r);if(sev)b.classList.add(sev);if(occ.students.length)b.classList.add('occupied-now');if(state.principalLocation===id)b.classList.add('principal-here');if(state.selectedRoom===id)b.classList.add('selected-visual-room');b.innerHTML=`<span class="rid">${id}</span><span class="rname">${r.grade?`Grade ${r.grade}`:name}</span>${r.grade?`<span class="teacher-map">${t?t.name:'VACANT'}</span>${v86RoomDecor(r,t)}`:''}<span class="live-activity">${activity}</span><span class="live-count">${occ.students.length?'🧒'.repeat(Math.min(5,Math.ceil(occ.students.length/5))):''} ${occ.students.length+occ.staff.length}${state.principalLocation===id?' • ⭐ YOU':''}</span>`;b.onclick=()=>{state.selectedRoom=id;state.visualCampus.zoom='room';renderBuilding();};map.appendChild(b);}if($('capacityChip'))$('capacityChip').textContent=`${mins12(state.simMinutes)} • ${schoolPhase()} • Enrollment ${enrollment()} / 480`;v83RoomInspector();v86DecorInspector();}
+function v86DecorInspector(){let id=state.selectedRoom,r=roomById(id),box=$('roomInspector');if(!r?.grade||!box)return;let v=state.classroomVisuals[id],extra=document.createElement('div');extra.className='classroom-visual-detail';extra.innerHTML=`<h3>🪑 Classroom Look</h3><div class="room-closeup">${v86RoomDecor(r,teacherForRoom(id))}<p><strong>${v.theme}</strong> • ${v.layout}</p><p>${v.library} classroom-library sections • Student work coverage ${v.studentWork}%</p><div class="decor-strip">📚 ${v.rug?'🟦 Rug ':''}${v.plants?'🪴 Plants ':''}🖼️ Student Work ✏️ Supplies 🧺 Cubbies</div></div>`;box.prepend(extra);}
+const renderBuildingV86Old=renderBuilding;renderBuilding=function(){ensureV86State();v86CampusPanel();v86RenderMap();};
+const renderV86Old=render;render=function(){ensureV86State();renderV86Old();if(document.querySelector('#view-building.active')){v86CampusPanel();v86RenderMap();}};
+const loadV86Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV86State();toast('V8.6 Visual Campus save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V851_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV86State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.6 Visual Campus.'});toast('Your V8.5 school was upgraded to V8.6.');render();return;}catch(e){console.error(e)}}return loadV86Old();};
+
+
+
+/* ================= V8.7 REAL SCHOOL OPERATIONS ================= */
+function ensureV87State(){
+ ensureV86State();state.version=8.7;
+ state.ops=state.ops||{};
+ let O=state.ops;
+ O.masterSchedules=O.masterSchedules||{};
+ O.officeQueue=O.officeQueue||[];
+ O.duties=O.duties||[];
+ O.attendance=O.attendance||{submitted:0,unexplained:[],tardies:[],earlyDismissals:[]};
+ O.security=O.security||{doors:'Secure',visitors:[],afterHours:[]};
+ O.cafeteria=O.cafeteria||{menu:pick(['Chicken sandwich','Tacos','Pasta','Pizza','Breakfast for lunch']),meals:0,inventory:'Good',equipment:'Operational'};
+ O.pm=O.pm||[
+   {item:'HVAC filters',due:'Monthly',status:'Current'},
+   {item:'Fire extinguisher inspection',due:'Monthly',status:'Current'},
+   {item:'Playground inspection',due:'Weekly',status:'Current'},
+   {item:'Kitchen hood / equipment',due:'Quarterly',status:'Current'},
+   {item:'Exterior door hardware',due:'Monthly',status:'Current'}
+ ];
+ O.custodialRoutes=O.custodialRoutes||[];
+ O.calendar=O.calendar||[
+   {day:'Monday',event:'Grade-level PLCs after school'},
+   {day:'Tuesday',event:'Intervention/data meetings'},
+   {day:'Wednesday',event:'Staff meeting / professional learning'},
+   {day:'Thursday',event:'IEP/504 conference block'},
+   {day:'Friday',event:'Family communication / weekly closeout'}
+ ];
+ O.drills=O.drills||[];
+ O.summer=O.summer||{phase:'School Year',projects:[],registration:'Normal'};
+ O.hiddenSignals=O.hiddenSignals||[];
+ O.coverage=O.coverage||[];
+ O.todayGenerated=O.todayGenerated||false;
+ O.hrPipeline=O.hrPipeline||[];
+ O.yearCalendar=O.yearCalendar||{studentDays:180,teacherDays:185,snowMakeup:0,fiscalYear:`${new Date(state.date).getFullYear()}–${new Date(state.date).getFullYear()+1}`};
+ buildMasterSchedules();
+ buildDuties();
+}
+function buildMasterSchedules(){
+ let O=state.ops;if(Object.keys(O.masterSchedules).length)return;
+ const gradeBlocks={
+ K:[['8:10','Morning Meeting'],['8:30','Literacy'],['9:40','Specials'],['10:30','Math'],['11:20','Lunch'],['11:50','Recess'],['12:20','Rest/Centers'],['1:00','Science/Social Studies'],['2:15','Pack Up']],
+ 1:[['8:10','Literacy'],['9:25','Math'],['10:15','Specials'],['11:35','Lunch'],['12:05','Recess'],['12:35','Intervention'],['1:10','Science/Social Studies'],['2:20','Pack Up']],
+ 2:[['8:10','Literacy'],['9:25','Intervention'],['10:00','Math'],['11:00','Specials'],['11:50','Lunch'],['12:20','Recess'],['12:50','Science/Social Studies'],['2:20','Pack Up']],
+ 3:[['8:10','Math'],['9:10','Literacy'],['10:30','Intervention'],['11:15','Lunch'],['11:45','Recess'],['12:20','Specials'],['1:10','Science/Social Studies'],['2:20','Pack Up']],
+ 4:[['8:10','Literacy'],['9:20','Math'],['10:20','Science/Social Studies'],['11:35','Specials'],['12:20','Lunch'],['12:50','Recess'],['1:20','Intervention'],['2:20','Pack Up']],
+ 5:[['8:10','Math'],['9:10','Literacy'],['10:25','Specials'],['11:20','Science/Social Studies'],['12:35','Lunch'],['1:05','Recess'],['1:30','Intervention'],['2:20','Pack Up']],
+ 6:[['8:10','Literacy'],['9:15','Math'],['10:15','Science/Social Studies'],['11:30','Intervention'],['12:05','Specials'],['1:10','Lunch'],['1:40','Recess'],['2:10','Pack Up']]
+ };
+ state.rooms.filter(r=>r.grade).forEach(r=>O.masterSchedules[r.id]=(gradeBlocks[r.grade]||gradeBlocks[String(r.grade)]||gradeBlocks.K).map(x=>({time:x[0],activity:x[1]})));
+}
+function buildDuties(){
+ let O=state.ops;if(O.duties.length)return;let ts=activeEmployees().filter(e=>e.category==='Teacher');
+ ['Bus Arrival','Car Line AM','Lunch Duty','Recess Duty','Bus Dismissal','Car Line PM'].forEach((d,i)=>O.duties.push({duty:d,employee:ts[i%Math.max(1,ts.length)]?.name||'Unassigned',status:'Covered'}));
+}
+function opsTimeToMins(t){let [h,m]=t.split(':').map(Number);return h*60+m}
+function currentMasterBlock(roomId){
+ ensureV87State();let arr=state.ops.masterSchedules[roomId]||[];let now=state.simMinutes,best=null;arr.forEach(x=>{if(opsTimeToMins(x.time)<=now)best=x});return best?.activity||'Arrival / transition';
+}
+function generateDailyOps(){
+ ensureV87State();let O=state.ops;if(O.todayGenerated)return;O.todayGenerated=true;
+ let activeStudents=state.students.filter(x=>x.status==='Active');
+ O.attendance.submitted=Math.max(0,state.rooms.filter(r=>r.grade).length-rnd(0,2));
+ O.attendance.unexplained=activeStudents.filter(()=>Math.random()<.018).slice(0,8).map(s=>`${s.first} ${s.last}`);
+ O.attendance.tardies=activeStudents.filter(()=>Math.random()<.012).slice(0,5).map(s=>`${s.first} ${s.last}`);
+ O.officeQueue=[
+   {type:'Transportation Change',detail:'Parent called with an afternoon pickup change.',handledBy:'Secretary'},
+   {type:'Delivery',detail:'Instructional supplies received.',handledBy:'Secretary'}
+ ];
+ if(Math.random()<.25)O.officeQueue.push({type:'Parent Request',detail:'Family requested a principal follow-up.',handledBy:'Principal'});
+ let absent=activeEmployees().filter(e=>e.status==='Absent'||e.leave);
+ O.coverage=[];absent.filter(e=>e.category==='Teacher').forEach((e,i)=>O.coverage.push({teacher:e.name,coverage:state.subPool[i]?.name||pick(['AP','Intervention Teacher','Principal']),planningImpact:!state.subPool[i]}));
+ O.cafeteria.meals=Math.round(enrollment()*.76);
+ O.custodialRoutes=activeEmployees().filter(e=>/custod/i.test(e.position||'')).map((e,i)=>({employee:e.name,zone:['Primary Wing','Intermediate Wing','Cafeteria / Commons','Specials / Offices'][i%4],progress:state.simMinutes<900?0:clamp(Math.floor((state.simMinutes-900)/2),0,100)}));
+}
+function easyObserve(){
+ ensureV87State();let teachers=activeEmployees().filter(e=>e.category==='Teacher'&&e.room);
+ let available=teachers.filter(observationAvailable);
+ openModal('👀 Quick Teacher Observation',`<p>Choose a teacher. You will walk to the classroom automatically and conduct a quick walkthrough.</p><div class="compact-list">${teachers.map(t=>`<button class="teacher-observe-pick ${available.includes(t)?'':'disabled'}" data-id="${t.id}" ${available.includes(t)?'':'disabled'}><strong>${t.name}</strong><span>${t.room} • ${available.includes(t)?currentMasterBlock(t.room):'Not available right now'}</span></button>`).join('')}</div>`);
+ document.querySelectorAll('.teacher-observe-pick:not(.disabled)').forEach(b=>b.onclick=()=>{let t=state.employees.find(x=>x.id===b.dataset.id);closeModal();state.principalLocation=t.room;observeTeacher(t,false)});
+}
+function v87Drill(){
+ ensureV87State();let type=pick(['Fire Drill','Tornado Drill','Lockdown Drill']);let result={date:state.date,time:mins12(state.simMinutes),type,accountability:pick(['All accounted for','One roster reconciliation delay']),timeSecs:rnd(155,290),finding:pick(['No corrective action needed.','Cafeteria accountability took too long.','One classroom door needed a second check.','Grade 4 transition was especially efficient.'])};state.ops.drills.unshift(result);state.simMinutes+=15;state.schoolHistory.unshift({date:state.date,text:`${type}: ${result.finding}`});openModal(type,`<p><strong>${Math.floor(result.timeSecs/60)}m ${result.timeSecs%60}s</strong> to complete.</p><p>${result.accountability}</p><p>${result.finding}</p>`);render();
+}
+function v87EnrollmentArrival(){
+ ensureV87State();let s=pick(state.students.filter(x=>x.status==='Active'));if(!s)return;let g=s.grade,rooms=state.rooms.filter(r=>r.grade==g),best=rooms.sort((a,b)=>studentsInRoom(a.id).length-studentsInRoom(b.id).length)[0];state.ops.officeQueue.unshift({type:'New Enrollment',detail:`A new Grade ${g} family is completing registration. Recommended classroom: ${best?.id||'review needed'}.`,handledBy:'Office / Principal'});
+}
+function v87AfterSchool(){
+ ensureV87State();if(state.simMinutes<900)return 'Students still in session';let t=state.simMinutes;return t<960?'Dismissal, teacher planning, office closeout and custodial startup':t<1050?'Meetings, conferences, custodial routes and technology work':'Building mostly empty; evening cleaning/security';
+}
+function v87Render(){
+ ensureV87State();generateDailyOps();let host=$('v84SchoolDay');if(!host)return;let box=$('v87Ops');if(!box){box=document.createElement('section');box.id='v87Ops';box.className='card padded';host.parentNode.insertBefore(box,host.nextSibling)}
+ let O=state.ops, sel=state.selectedRoom&&roomById(state.selectedRoom)?.grade?state.selectedRoom:state.rooms.find(r=>r.grade)?.id;
+ box.innerHTML=`<div class="section-head"><div><h2>Real School Operations</h2><p class="muted">Routine systems run themselves. You intervene when leadership is actually needed.</p></div><div><button id="easyObserveBtn" class="primary">👀 Observe a Teacher</button> <button id="drillBtn" class="secondary">🚨 Run Drill</button></div></div>
+ <div class="ops-grid">
+ <div><h3>Master Schedule — ${sel||''}</h3>${(O.masterSchedules[sel]||[]).map(x=>`<div class="position-row ${currentMasterBlock(sel)===x.activity?'current-block':''}"><span>${x.time}</span><strong>${x.activity}</strong></div>`).join('')}<p class="muted">Current: ${currentMasterBlock(sel)}</p></div>
+ <div><h3>Front Office</h3><div class="compact-item"><strong>Attendance</strong><br>${O.attendance.submitted}/21 classrooms submitted • ${O.attendance.unexplained.length} unexplained • ${O.attendance.tardies.length} tardies</div>${O.officeQueue.slice(0,5).map(x=>`<div class="compact-item"><strong>${x.type}</strong><br>${x.detail}<br><span class="muted">Handled by ${x.handledBy}</span></div>`).join('')}</div>
+ <div><h3>Coverage & Duties</h3>${O.coverage.map(x=>`<div class="compact-item"><strong>${x.teacher}</strong> → ${x.coverage}${x.planningImpact?' • internal coverage':''}</div>`).join('')||'<p class="muted">All classrooms normally covered.</p>'}${O.duties.map(x=>`<div class="position-row"><span>${x.duty}</span><strong>${x.employee}</strong></div>`).join('')}</div>
+ <div><h3>After-School / Building</h3><div class="compact-item">${v87AfterSchool()}</div>${O.custodialRoutes.map(x=>`<div class="position-row"><span>${x.employee} — ${x.zone}</span><strong>${x.progress}%</strong></div>`).join('')||'<p class="muted">Custodial routes begin after dismissal.</p>'}<h3>Preventive Maintenance</h3>${O.pm.slice(0,3).map(x=>`<div class="position-row"><span>${x.item}</span><strong>${x.status}</strong></div>`).join('')}</div>
+ <div><h3>Cafeteria</h3><div class="compact-item"><strong>${O.cafeteria.menu}</strong><br>${O.cafeteria.meals} projected meals • ${O.cafeteria.inventory} inventory • ${O.cafeteria.equipment}</div><h3>Security</h3><div class="compact-item">Exterior doors: <strong>${O.security.doors}</strong><br>Visitors logged: ${O.security.visitors.length}</div></div>
+ <div><h3>Weekly Rhythm</h3>${O.calendar.map(x=>`<div class="position-row"><span>${x.day}</span><strong>${x.event}</strong></div>`).join('')}<h3>School Calendar</h3><div class="compact-item">${O.yearCalendar.studentDays} student days • ${O.yearCalendar.teacherDays} teacher days<br>Fiscal year ${O.yearCalendar.fiscalYear} • Snow makeup ${O.yearCalendar.snowMakeup}</div></div>
+ </div>`;
+ $('easyObserveBtn').onclick=easyObserve;$('drillBtn').onclick=v87Drill;
+}
+function v87OperationalTick(){
+ ensureV87State();generateDailyOps();
+ if(Math.random()<.004)v87EnrollmentArrival();
+ if(state.simMinutes>=900)state.ops.custodialRoutes.forEach(x=>x.progress=clamp(x.progress+rnd(1,4),0,100));
+ if(Math.random()<.003){let d=pick(state.ops.pm);d.status='Due Soon';}
+ if(Math.random()<.002){state.ops.cafeteria.equipment=pick(['Operational','Minor issue — kitchen handling','Service call placed']);}
+}
+const tickV87Old=playableTick;playableTick=function(minutes=5){tickV87Old(minutes);v87OperationalTick();};
+const dayV87Old=advanceDay;advanceDay=function(){dayV87Old();ensureV87State();state.ops.todayGenerated=false;generateDailyOps();};
+const renderV87Old=render;render=function(){ensureV87State();renderV87Old();v87Render();};
+const loadV87Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV87State();toast('V8.7 Real School Operations save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V86_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV87State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.7 Real School Operations.'});toast('Your V8.6 school was upgraded to V8.7.');render();return;}catch(e){console.error(e)}}return loadV87Old();};
+
+
+
+/* ================= V8.8 PEOPLE & PRESENCE ================= */
+function ensureV88State(){
+ ensureV87State();state.version=8.8;state.presence=state.presence||{};
+ let P=state.presence;
+ P.principal=P.principal||{energy:88,visibility:50,paperwork:[],promises:[],lateNights:0,officeMinutes:0,walkMinutes:0};
+ P.staffLounge=P.staffLounge||[];
+ P.relationships=P.relationships||{};
+ P.morning=P.morning||{generated:false,events:[]};
+ P.desk=P.desk||{stickyNotes:['Walk classrooms before lunch','Review this week’s calendar'],voicemail:[],papers:[]};
+ P.generations=P.generations||{graduates:[],formerStaff:[]};
+ activeEmployees().forEach((e,i)=>{e.life=e.life||{age:rnd(24,61),careerStage:'',mentor:null,aspiration:pick(['Remain in classroom','Grade-level leadership','Instructional coaching','Administration','Retire from Lincoln']),arrival:pick([405,420,435,450]),departure:pick([930,960,990,1020]),style:pick(['Structured routines','Flexible / collaborative','Project-based','Calm and minimalist','Highly decorated','Technology-rich'])};e.life.careerStage=e.experience<3?'Early Career':e.experience<10?'Established':e.experience<20?'Veteran':'Senior Veteran';});
+ state.students.forEach(st=>{st.timeline=st.timeline||[];st.peerStyle=st.peerStyle||pick(['Social connector','Quiet observer','Natural helper','Independent','High energy','Steady friend']);});
+}
+function evidenceForEmployee(e){
+ ensureV88State();let notes=[];
+ if(e.memory?.length)notes.push(e.memory[0]);
+ if(e.history?.length)notes.push(e.history[0]);
+ if(e.life)notes.push(`${e.life.careerStage}; classroom style: ${e.life.style}.`);
+ if(e.status==='Absent')notes.push('Absent today.');
+ return notes.slice(0,3);
+}
+function v88RememberPromise(person,text){ensureV88State();state.presence.principal.promises.unshift({person,text,date:state.date,status:'Open'});}
+function v88TalkEmployee(e){
+ ensureV88State();let topic=pick([
+  `Things are going pretty well. ${e.life?.style||'The classroom'} has been working for this group.`,
+  `I wanted to mention a student who may need a little more support.`,
+  `Could we revisit something on the schedule when you have time?`,
+  `Thanks for being visible in the building today.`,
+  `I've been thinking about ${e.life?.aspiration?.toLowerCase()||'what comes next professionally'}.`
+ ]);
+ state.presence.principal.visibility=clamp(state.presence.principal.visibility+3,0,100);
+ e.memory=e.memory||[];e.memory.unshift(`${state.date}: Principal checked in informally.`);
+ addLiveAlert('💬',`Conversation with ${e.name}`,topic,'Info',currentEmployeeLocation(e));
+}
+function v88Morning(){
+ ensureV88State();let M=state.presence.morning;if(M.generated)return;M.generated=true;M.events=[];
+ let absent=activeEmployees().filter(e=>e.status==='Absent'||e.leave);
+ if(absent.length)M.events.push(`${absent.length} employee${absent.length>1?'s':''} out; office/sub system started coverage.`);
+ if(Math.random()<.55){let e=pick(activeEmployees().filter(x=>x.category==='Teacher'));if(e)M.events.push(`${e.name} arrived early and asked if you have a few minutes before students arrive.`);}
+ if(Math.random()<.35)M.events.push('A parent is waiting near the front office with a question.');
+ if(Math.random()<.30)M.events.push('One bus is projected several minutes late.');
+ M.events.push('Secretary opened the office and began attendance/visitor preparation.');
+}
+function v88PresenceTick(minutes=5){
+ ensureV88State();v88Morning();let P=state.presence.principal,loc=currentPrincipalLocation();
+ if(loc==='OFFICE'||loc==='ADMIN')P.officeMinutes+=minutes;else{P.walkMinutes+=minutes;P.visibility=clamp(P.visibility+minutes*.08,0,100);}
+ P.energy=clamp(P.energy-minutes*.012,25,100);
+ if(Math.random()<.003){let e=pick(activeEmployees());if(e){let msg=pick([`${e.name} helped another employee solve a routine problem without escalation.`,`${e.name} volunteered to help with an upcoming school event.`,`${e.name} was seen checking in with a colleague after a difficult class period.`]);state.presence.staffLounge.unshift({date:state.date,text:msg});}}
+ if(Math.random()<.0025){let s=pick(state.students.filter(x=>x.status==='Active'));if(s){let msg=pick([`${s.first} had a disagreement with a friend that the teacher resolved.`,`${s.first} helped another student during class.`,`${s.first} had an especially strong day academically.`,`${s.first} needed extra reassurance during a transition.`]);s.timeline.unshift(`${state.date}: ${msg}`);}}
+}
+function v88AddPaperwork(){
+ ensureV88State();let P=state.presence.principal;if(Math.random()<.18)P.paperwork.unshift({id:uid('paper'),text:pick(['Approve weekly time records','Review observation notes','Sign student records request','Review purchase request','Complete district data confirmation','Follow up on family communication']),mins:pick([5,10,15,20]),done:false,date:state.date});
+}
+function doPaperwork(id){let P=state.presence.principal,x=P.paperwork.find(y=>y.id===id);if(!x||x.done)return;x.done=true;state.simMinutes=Math.min(1080,state.simMinutes+x.mins);P.energy=clamp(P.energy-2,0,100);toast(`${x.text} completed (${x.mins} min).`);render();}
+function v88Office(){
+ ensureV88State();let P=state.presence.principal,D=state.presence.desk;
+ openModal('🏢 Principal Office',`<div class="principal-office-scene"><div class="office-window">🪟 <small>${state.world.weather.condition}</small></div><div class="office-desk">🖥️ 💻 ☎️ 📁 🗓️<br><strong>Principal Desk</strong></div><div class="office-chair">🪑</div><div class="office-files">🗄️ Personnel & Student Files</div></div><div class="desk-launchers"><button id="deskComputerV88" class="primary">💻 Computer</button><button id="deskPhoneV88" class="secondary">☎️ Phone</button><button id="deskCalendarV88" class="secondary">🗓️ Calendar</button><button id="deskPaperV88" class="secondary">📄 Paperwork (${P.paperwork.filter(x=>!x.done).length})</button></div><h3>Sticky Notes</h3>${D.stickyNotes.map(x=>`<div class="sticky-note">${x}</div>`).join('')}<h3>Open promises</h3>${P.promises.filter(x=>x.status==='Open').map(x=>`<div class="compact-item"><strong>${x.person}</strong><br>${x.text}</div>`).join('')||'<p class="muted">No outstanding promises.</p>'}`);
+ $('deskComputerV88').onclick=v88Computer;$('deskPhoneV88').onclick=v88Phone;$('deskCalendarV88').onclick=()=>{closeModal();v88Calendar()};$('deskPaperV88').onclick=()=>{closeModal();v88Paperwork()};
+}
+function v88Computer(){
+ let O=state.ops;openModal('💻 District Computer',`<div class="computer-screen"><h2>Lincoln District Portal</h2><div class="app-grid"><button onclick="closeModal();document.querySelector('[data-view=\\'inbox\\']')?.click()">✉️ Email</button><button onclick="closeModal();document.querySelector('[data-view=\\'staff\\']')?.click()">👥 HR / Staff</button><button onclick="closeModal();document.querySelector('[data-view=\\'students\\']')?.click()">🎒 Student Information</button><button onclick="closeModal();document.querySelector('[data-view=\\'finance\\']')?.click()">💰 Finance</button><button onclick="closeModal();document.querySelector('[data-view=\\'operations\\']')?.click()">🔧 Work Orders</button><button onclick="closeModal();document.querySelector('[data-view=\\'district\\']')?.click()">🏛️ District</button></div><p class="muted">Signed in as Principal • Lincoln Elementary</p></div>`);}
+function v88Phone(){
+ let leaders=state.world.leaders||[];openModal('☎️ Principal Phone',`<h3>Recent / Common Contacts</h3><div class="phone-list">${leaders.map(x=>`<button class="phone-contact" data-name="${x.name}">📞 <strong>${x.name}</strong><span>${x.role}</span></button>`).join('')}<button class="phone-contact" data-name="Front Office">📞 <strong>Front Office</strong><span>Secretary</span></button><button class="phone-contact" data-name="Facilities">📞 <strong>Facilities</strong><span>District support</span></button></div>`);document.querySelectorAll('.phone-contact').forEach(b=>b.onclick=()=>{state.simMinutes+=5;toast(`Call with ${b.dataset.name} completed.`);closeModal();render()});}
+function v88Calendar(){let O=state.ops;openModal('🗓️ Principal Calendar',`<h3>This Week</h3>${O.calendar.map(x=>`<div class="calendar-day"><strong>${x.day}</strong><span>${x.event}</span></div>`).join('')}<h3>Today's Time Commitments</h3><p>Walking, observations, meetings, phone calls and paperwork all advance the school clock. The school continues operating while you are busy.</p>`);}
+function v88Paperwork(){let P=state.presence.principal;openModal('📄 Principal Paperwork',`${P.paperwork.filter(x=>!x.done).map(x=>`<button class="paper-item" data-id="${x.id}"><strong>${x.text}</strong><span>${x.mins} minutes</span></button>`).join('')||'<p>Desk is caught up.</p>'}`);document.querySelectorAll('.paper-item').forEach(b=>b.onclick=()=>{closeModal();doPaperwork(b.dataset.id)});}
+function v88PeoplePanel(){
+ ensureV88State();let host=$('v87Ops');if(!host)return;let box=$('v88People');if(!box){box=document.createElement('section');box.id='v88People';box.className='card padded';host.parentNode.insertBefore(box,host.nextSibling)}
+ let P=state.presence.principal,lounge=state.presence.staffLounge.slice(0,4),M=state.presence.morning;
+ let loungePeople=activeEmployees().filter(e=>{let l=currentEmployeeLocation(e);return l==='LOUNGE'||(/teacher/i.test(e.position||'')&&state.simMinutes>=690&&state.simMinutes<=810)}).slice(0,5);
+ box.innerHTML=`<div class="section-head"><div><h2>People & Presence</h2><p class="muted">You learn about Lincoln by being present—not by seeing hidden scores.</p></div><button class="primary" id="principalOfficeBtn">🏢 Principal Office</button></div>
+ <div class="people-presence-grid"><div><h3>Principal Day</h3><div class="compact-item"><strong>Where you've spent your time</strong><br>Office ${Math.round(P.officeMinutes)} min • Building ${Math.round(P.walkMinutes)} min</div><div class="compact-item">Paperwork waiting: <strong>${P.paperwork.filter(x=>!x.done).length}</strong><br>Open follow-ups: <strong>${P.promises.filter(x=>x.status==='Open').length}</strong></div></div>
+ <div><h3>This Morning</h3>${M.events.map(x=>`<div class="compact-item">${x}</div>`).join('')}</div>
+ <div><h3>Staff Lounge</h3>${loungePeople.map(e=>`<div class="compact-item">☕ <strong>${e.name}</strong> — ${e.position}</div>`).join('')||'<p class="muted">Quiet right now.</p>'}${lounge.map(x=>`<div class="compact-item">${x.text}</div>`).join('')}</div>
+ <div><h3>Institutional Memory</h3>${state.schoolHistory.slice(0,5).map(x=>`<div class="compact-item"><strong>${x.date}</strong> — ${x.text}</div>`).join('')}</div></div>`;
+ $('principalOfficeBtn').onclick=v88Office;
+}
+function v88AnnualPeople(){
+ ensureV88State();activeEmployees().forEach(e=>{if(e.life){e.life.age++;if(Math.random()<.12)e.life.aspiration=pick(['Remain in classroom','Grade-level leadership','Instructional coaching','Administration','Retire from Lincoln']);}});
+ state.students.filter(s=>s.status==='Active').forEach(s=>s.timeline.unshift(`${state.date}: Completed another year at Lincoln Elementary.`));
+}
+const talkV88Old=talkToPerson;talkToPerson=function(kind,id){if(kind==='employee'){let e=state.employees.find(x=>x.id===id);if(e)v88TalkEmployee(e);}return talkV88Old(kind,id);};
+const tickV88Old=playableTick;playableTick=function(minutes=5){tickV88Old(minutes);v88PresenceTick(minutes);if(Math.random()<.03)v88AddPaperwork();};
+const dayV88Old=advanceDay;advanceDay=function(){dayV88Old();ensureV88State();state.presence.morning={generated:false,events:[]};state.presence.principal.officeMinutes=0;state.presence.principal.walkMinutes=0;v88Morning();v88AddPaperwork();};
+const yearV88Old=endSchoolYear;endSchoolYear=function(){v88AnnualPeople();yearV88Old();};
+const renderV88Old=render;render=function(){ensureV88State();v88Morning();renderV88Old();v88PeoplePanel();};
+const loadV88Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV88State();toast('V8.8 People & Presence save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V87_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV88State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.8 People & Presence.'});toast('Your V8.7 school was upgraded to V8.8.');render();return;}catch(e){console.error(e)}}return loadV88Old();};
+
+
+
+/* ================= V8.9 GENERATIONS & STAFFING PIPELINE ================= */
+function ensureV89State(){
+ ensureV88State();state.version=8.9;state.staffing89=state.staffing89||{};let S=state.staffing89;
+ S.intentForms=S.intentForms||[];S.studentTeachers=S.studentTeachers||[];S.interns=S.interns||[];S.cadets=S.cadets||[];S.universities=S.universities||[
+ {name:'Indiana State University',relationship:'Active'},{name:'Ball State University',relationship:'Active'},{name:'Grace College',relationship:'Active'},{name:'Purdue Fort Wayne',relationship:'Developing'}];
+ S.mentorships=S.mentorships||[];S.transferRequests=S.transferRequests||[];S.internalMoves=S.internalMoves||[];S.longTermLeaves=S.longTermLeaves||[];S.preferredSubs=S.preferredSubs||[];
+ S.alumniApplicants=S.alumniApplicants||[];S.formerEmployees=S.formerEmployees||[];S.staffingBoard=S.staffingBoard||[];S.recruiting=S.recruiting||{reputation:'Positive',jobFairs:0,hardToFill:['Special Education','School Psychologist','Speech / Language','Bus Driver','Substitute Teacher']};
+ S.milestones=S.milestones||[];S.succession=S.succession||[];S.lastSpringYear=S.lastSpringYear||null;S.lastAlumniYear=S.lastAlumniYear||null;
+ activeEmployees().forEach(e=>{e.staffingProfile=e.staffingProfile||{gradePreferences:[],intent:'Returning',degree:pick(["Bachelor's","Master's","Master's +30"]),certifications:[],serviceYears:e.experience||0,contractStatus:(e.experience||0)<3?'Probationary':'Established',commute:rnd(5,42),leadershipRoles:[],mentorHistory:[],rehire:true};});
+ seedStaffingBoard();
+}
+function teacherGrade(e){let r=roomById(e.room);return r?.grade||''}
+function seedStaffingBoard(){let S=state.staffing89;if(S.staffingBoard.length)return;state.rooms.filter(r=>r.grade).forEach(r=>{let e=teacherForRoom(r.id);S.staffingBoard.push({room:r.id,grade:r.grade,employeeId:e?.id||null,status:e?'Returning':'VACANT'});});}
+function staffingSeason(){let m=parseInt(state.date.split('-')[1]);return m>=2&&m<=6}
+function generateIntentForms(){
+ ensureV89State();let S=state.staffing89,yr=state.date.slice(0,4);if(S.lastSpringYear===yr||!staffingSeason())return;S.lastSpringYear=yr;
+ activeEmployees().filter(e=>e.category==='Teacher').forEach(e=>{let cur=teacherGrade(e),choices=GRADES.filter(g=>String(g)!==String(cur)),roll=Math.random(),intent='Returning',prefs=[];
+ if(e.life?.age>=59&&roll<.20)intent='Considering Retirement';
+ else if(roll<.12){intent='Grade Change Requested';prefs=[pick(choices),pick(choices.filter(x=>x!==prefs[0]))].filter(Boolean)}
+ else if(roll<.17)intent='District Transfer Interest';
+ else if(roll<.21)intent='Reduced FTE / Leave Request';
+ e.staffingProfile.intent=intent;e.staffingProfile.gradePreferences=prefs;
+ let form={id:uid('intent'),employeeId:e.id,name:e.name,current:`Grade ${cur||'?'} / ${e.room||'No room'}`,intent,preferences:prefs,date:state.date,status:'Submitted'};S.intentForms.unshift(form);
+ if(intent==='Grade Change Requested')S.transferRequests.unshift({id:uid('tr'),employeeId:e.id,name:e.name,type:'Within Lincoln',currentGrade:cur,preferences:prefs,status:'Pending',reason:pick(['Interested in a new instructional challenge','Prefers upper elementary curriculum','Prefers primary-grade instruction','Would like experience with another team'])});
+ if(intent==='District Transfer Interest')S.transferRequests.unshift({id:uid('tr'),employeeId:e.id,name:e.name,type:'School-to-School',currentGrade:cur,preferences:[],status:'Confidential / Pending',reason:'Exploring another district assignment'});
+ });}
+function placeStudentTeacher(){
+ ensureV89State();let S=state.staffing89,mentors=activeEmployees().filter(e=>e.category==='Teacher'&&(e.experience||0)>=4);if(!mentors.length)return toast('No eligible cooperating teachers available.');
+ let mentor=pick(mentors),uni=pick(S.universities),names=['Emily Dawson','Maya Thompson','Noah Bennett','Sophia Ramirez','Caleb Morgan','Avery Collins','Jordan Patel','Grace Wilson'],name=pick(names.filter(n=>!S.studentTeachers.some(x=>x.name===n))||names);
+ let st={id:uid('st'),name,university:uni.name,mentorId:mentor.id,mentor:mentor.name,room:mentor.room,grade:teacherGrade(mentor),phase:'Observing',start:state.date,end:'Semester End',evaluation:'Developing evidence',future:'Education candidate'};
+ S.studentTeachers.unshift(st);S.mentorships.unshift({mentor:mentor.name,mentee:name,type:'Student Teacher',start:state.date});state.schoolHistory.unshift({date:state.date,text:`${name} began student teaching with ${mentor.name} in ${mentor.room}.`});toast(`${name} placed with ${mentor.name}.`);render();}
+function advancePlacements(){
+ let S=state.staffing89;S.studentTeachers.forEach(x=>{if(Math.random()<.10)x.phase=x.phase==='Observing'?'Small Groups':x.phase==='Small Groups'?'Partial Teaching':x.phase==='Partial Teaching'?'Full-Day Teaching':'Full-Day Teaching';if(x.phase==='Full-Day Teaching'&&Math.random()<.03)x.future='Strong future applicant';});
+}
+function addAdminIntern(){
+ ensureV89State();let e=pick(activeEmployees().filter(x=>x.category==='Teacher'&&(x.experience||0)>5));if(!e)return;state.staffing89.interns.unshift({id:uid('intern'),name:e.name,homeRole:e.position,program:'Educational Leadership',mentor:'Principal',experiences:['Arrival/Dismissal','Discipline shadowing','School improvement'],status:'Active'});toast(`${e.name} began an administrative internship.`);render();}
+function alumniReturn(){
+ ensureV89State();let S=state.staffing89,year=parseInt(state.date);if(S.lastAlumniYear===year)return;S.lastAlumniYear=year;if(year<2038||Math.random()>.55)return;
+ let archived=(state.presence?.generations?.graduates||[]);let first=archived.length?pick(archived):pick(['Ava Martinez','Ethan Brooks','Olivia Carter','Liam Wilson','Mia Thompson']);let name=typeof first==='string'?first:(first.name||`${first.first||'Ava'} ${first.last||'Martinez'}`);
+ let a={id:uid('alum'),name,lincolnYears:`${year-rnd(14,22)}–${year-rnd(7,13)}`,role:pick(['Elementary Teacher','Paraprofessional','Counselor','Technology Specialist','Substitute Teacher']),degree:pick(['Ball State University','Grace College','Purdue Fort Wayne']),status:'Potential Applicant',note:'Former Lincoln student'};
+ S.alumniApplicants.unshift(a);state.schoolHistory.unshift({date:state.date,text:`Former Lincoln student ${name} reconnected with the district as a potential ${a.role}.`});}
+function approveTransfer(id){
+ let S=state.staffing89,x=S.transferRequests.find(y=>y.id===id);if(!x)return;let e=state.employees.find(y=>y.id===x.employeeId);if(x.type==='Within Lincoln'&&x.preferences.length){let targetGrade=x.preferences[0],target=state.rooms.filter(r=>String(r.grade)===String(targetGrade)).find(r=>!teacherForRoom(r.id));if(target&&e){let old=e.room;e.room=target.id;x.status='Approved';e.history.unshift(`${state.date}: Internal assignment change approved from ${old} to ${target.id} / Grade ${targetGrade}.`);state.staffing89.internalMoves.unshift({name:e.name,from:old,to:target.id,date:state.date,status:'Summer move'});toast(`${e.name} approved for Grade ${targetGrade}.`)}else{x.status='Approved when vacancy permits';toast('Preference approved, but no open room exists yet.')}}else{x.status='Acknowledged / District Review';toast('District transfer interest sent for review.')}render();}
+function denyTransfer(id){let x=state.staffing89.transferRequests.find(y=>y.id===id);if(!x)return;x.status='Not Approved';let e=state.employees.find(y=>y.id===x.employeeId);if(e){e.memory=e.memory||[];e.memory.unshift(`${state.date}: Assignment/transfer request was not approved.`)}render();}
+function v89RoomMoveVisual(id){let move=state.staffing89.internalMoves.find(x=>x.to===id&&x.status==='Summer move');return move?`<div class="moving-boxes">📦 📦 Room move: ${move.name}</div>`:''}
+function v89StaffingBoard(){
+ ensureV89State();let S=state.staffing89;openModal('📋 Next-Year Staffing Board',`<p>Build next year's assignments from actual rooms, employee requests, enrollment and vacancies.</p><div class="staffing-board">${GRADES.map(g=>`<section><h3>Grade ${g}</h3>${state.rooms.filter(r=>String(r.grade)===String(g)).map(r=>{let t=teacherForRoom(r.id),req=t&&S.transferRequests.find(x=>x.employeeId===t.id&&x.status.includes('Pending'));return `<div class="staffing-slot"><strong>${r.id}</strong><span>${t?t.name:'VACANT'}</span><small>${req?`🔄 ${req.type}: ${req.preferences.join(', ')||'other school'}`:t?.staffingProfile?.intent||'Open position'}</small>${v89RoomMoveVisual(r.id)}</div>`}).join('')}</section>`).join('')}</div><p class="muted">Assignments remain editable through the staffing season. Room changes create summer moves and remain in employee history.</p>`);}
+function v89Render(){
+ ensureV89State();generateIntentForms();let host=$('v88People');if(!host)return;let box=$('v89Staffing');if(!box){box=document.createElement('section');box.id='v89Staffing';box.className='card padded';host.parentNode.insertBefore(box,host.nextSibling)}
+ let S=state.staffing89;
+ box.innerHTML=`<div class="section-head"><div><h2>Generations & Staffing Pipeline</h2><p class="muted">Lincoln grows employees instead of simply generating vacancies and applicants.</p></div><button id="staffBoardBtn" class="primary">📋 Staffing Board</button></div>
+ <div class="staff89-grid">
+ <div><h3>Spring Intent / Transfers</h3>${S.transferRequests.slice(0,6).map(x=>`<div class="compact-item"><strong>${x.name}</strong> — ${x.type}<br>${x.currentGrade?`Current Grade ${x.currentGrade}`:''} ${x.preferences.length?`→ prefers ${x.preferences.join(' / ')}`:''}<br><span class="muted">${x.reason} • ${x.status}</span>${x.status.includes('Pending')?`<br><button data-approve="${x.id}">Approve / Support</button> <button data-deny="${x.id}">Do Not Approve</button>`:''}</div>`).join('')||'<p class="muted">No transfer requests right now.</p>'}</div>
+ <div><h3>🎓 Student Teachers</h3><button id="placeST" class="secondary">Request / Place Student Teacher</button>${S.studentTeachers.slice(0,5).map(x=>`<div class="compact-item"><strong>${x.name}</strong> — ${x.university}<br>${x.room} / Grade ${x.grade} with ${x.mentor}<br><span class="muted">${x.phase} • ${x.future}</span></div>`).join('')||'<p class="muted">No current placements.</p>'}</div>
+ <div><h3>🏫 Grow Your Own</h3><button id="adminInternBtn" class="secondary">Start Admin Internship</button>${S.interns.slice(0,4).map(x=>`<div class="compact-item"><strong>${x.name}</strong><br>${x.program} • ${x.status}</div>`).join('')}<p class="muted">Paras, substitutes, student teachers and employees can develop toward future roles.</p></div>
+ <div><h3>🦁 Former Lincoln Students</h3>${S.alumniApplicants.slice(0,5).map(x=>`<div class="compact-item"><strong>${x.name}</strong> — ${x.role}<br>${x.degree}<br><span class="muted">${x.note} • ${x.status}</span></div>`).join('')||'<p class="muted">As simulated decades pass, former students can return as applicants and employees.</p>'}</div>
+ <div><h3>University Partnerships</h3>${S.universities.map(x=>`<div class="position-row"><span>${x.name}</span><strong>${x.relationship}</strong></div>`).join('')}<h3>Hard-to-Fill</h3><p>${S.recruiting.hardToFill.join(' • ')}</p></div>
+ <div><h3>Mentorship Tree</h3>${S.mentorships.slice(0,6).map(x=>`<div class="compact-item"><strong>${x.mentor}</strong> → ${x.mentee}<br><span class="muted">${x.type} • since ${x.start}</span></div>`).join('')||"<p class='muted'>Mentor relationships will accumulate over Lincoln history.</p>"}</div>
+ </div>`;
+ $('staffBoardBtn').onclick=v89StaffingBoard;$('placeST').onclick=placeStudentTeacher;$('adminInternBtn').onclick=addAdminIntern;document.querySelectorAll('[data-approve]').forEach(b=>b.onclick=()=>approveTransfer(b.dataset.approve));document.querySelectorAll('[data-deny]').forEach(b=>b.onclick=()=>denyTransfer(b.dataset.deny));
+}
+function v89Annual(){
+ ensureV89State();let S=state.staffing89;
+ activeEmployees().forEach(e=>{if(e.staffingProfile){e.staffingProfile.serviceYears++;if(e.staffingProfile.serviceYears%5===0)S.milestones.unshift({name:e.name,years:e.staffingProfile.serviceYears,date:state.date});if(Math.random()<.08)e.staffingProfile.degree=pick(["Bachelor's","Master's","Master's +30","Doctorate / Specialist"]);}});
+ S.studentTeachers.forEach(x=>{if(x.future==='Strong future applicant'&&Math.random()<.6)S.alumniApplicants.unshift({id:uid('cand'),name:x.name,role:'Elementary Teacher',degree:x.university,status:'Applicant',note:`Former Lincoln student teacher with ${x.mentor}`});});
+ alumniReturn();
+}
+const tickV89Old=playableTick;playableTick=function(minutes=5){tickV89Old(minutes);advancePlacements();};
+const yearV89Old=endSchoolYear;endSchoolYear=function(){v89Annual();yearV89Old();};
+const renderV89Old=render;render=function(){ensureV89State();renderV89Old();v89Render();};
+const loadV89Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV89State();toast('V8.9 Generations & Staffing save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V88_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV89State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V8.9 Generations & Staffing.'});toast('Your V8.8 school was upgraded to V8.9.');render();return;}catch(e){console.error(e)}}return loadV89Old();};
+
+
+
+/* ================= V9.0 CONNECTED SCHOOL ================= */
+function ensureV90State(){
+ ensureV89State();state.version=9.0;state.connected90=state.connected90||{};let C=state.connected90;
+ C.social=C.social||{staffGroups:[],rumors:[],studentConnections:[]};C.familyHistory=C.familyHistory||{};C.subs=C.subs||[];C.office=C.office||{queue:[],resolvedToday:0};
+ C.leaderDays=C.leaderDays||{};C.meetings=C.meetings||[];C.access=C.access||[];C.requests=C.requests||[];C.orders=C.orders||[];C.fieldTrips=C.fieldTrips||[];
+ C.visitors=C.visitors||[];C.budgets=C.budgets||{classroom:state.rooms.filter(r=>r.grade).map(r=>({room:r.id,balance:350})),grade:GRADES.map(g=>({grade:g,balance:900})),pto:6500,building:18000,grants:[]};
+ C.enrollmentPressure=C.enrollmentPressure||{projection:enrollment(),capacity:state.rooms.filter(r=>r.grade).length*28,status:'Stable',addition:null};
+ C.incidents=C.incidents||[];C.staffPrep=C.staffPrep||{};C.today=C.today||{generated:false};
+ activeEmployees().forEach(e=>{e.familyLife=e.familyLife||{note:pick(['No known change','Family schedule stable','Completing professional coursework','Balancing family commitments']),lastChange:null};});
+ seedSocialWorld();seedLeadershipDays();
+}
+function seedSocialWorld(){let C=state.connected90;if(C.social.staffGroups.length)return;let ts=activeEmployees().filter(e=>e.category==='Teacher');for(let i=0;i<ts.length;i+=4){let g=ts.slice(i,i+4);if(g.length>1)C.social.staffGroups.push({name:pick(['Lunch Group','Planning Friends','Morning Coffee Group','Veteran/New Teacher Mix']),members:g.map(x=>x.id)});}}
+function seedLeadershipDays(){let C=state.connected90;['Assistant Principal','Counselor','Secretary','Head Custodian'].forEach(role=>C.leaderDays[role]=C.leaderDays[role]||{agenda:[],handled:0});}
+function v90Daily(){
+ ensureV90State();let C=state.connected90;if(C.today.generated)return;C.today.generated=true;
+ C.office.queue=[
+ {id:uid('oq'),type:'Phone',text:'Routine attendance question',owner:'Secretary',principal:false},
+ {id:uid('oq'),type:'Transportation',text:'Afternoon pickup change',owner:'Secretary',principal:false},
+ {id:uid('oq'),type:'Delivery',text:'Package received for a classroom',owner:'Secretary',principal:false}
+ ];
+ if(Math.random()<.28)C.office.queue.push({id:uid('oq'),type:'Parent',text:'Parent requests administrator follow-up',owner:'Principal',principal:true});
+ let roles={
+ 'Assistant Principal':['Behavior follow-up','Walkthrough','IEP/504 meeting','Lunch duty','Dismissal'],
+ 'Counselor':['Student check-in','Small group','MTSS meeting','Family contact'],
+ 'Secretary':['Attendance reconciliation','Visitor desk','Transportation changes','Records / calls'],
+ 'Head Custodian':['Opening inspection','Work orders','Cafeteria support','PM check','Evening zone coverage']
+ };Object.entries(roles).forEach(([r,a])=>C.leaderDays[r].agenda=a.map((x,i)=>({time:['8:15','9:00','10:15','11:30','2:35'][i]||'1:30',item:x})));
+ activeEmployees().filter(e=>e.category==='Teacher').forEach(e=>{C.staffPrep[e.id]={planning:pick(['Lesson planning','Grading / feedback','Family communication','Material preparation']),stayingLate:Math.random()<.15};});
+ if(Math.random()<.16){let names=activeEmployees().filter(e=>e.category==='Teacher');if(names.length>1){let a=pick(names),b=pick(names.filter(x=>x.id!==a.id));C.social.rumors.unshift({date:state.date,text:pick([`${a.name} heard the district may adjust next year's schedule, but nothing is official.`,`${b.name} mentioned hearing that enrollment projections could change.`,`Staff are wondering whether a district initiative will affect next year. `]),certainty:'Unconfirmed'});}}
+ if(Math.random()<.10)spawnVisitor();
+ if(Math.random()<.06)spawnRequest();
+ updateEnrollmentPressure();
+}
+function spawnVisitor(){let C=state.connected90;let v={id:uid('vis'),time:mins12(state.simMinutes),name:pick(['District Curriculum Director','Fire Marshal','University Supervisor','School Board Member','Prospective Family','District Facilities Manager','Superintendent Lawson']),purpose:pick(['Scheduled walkthrough','Routine visit','Program review','Facilities check','Meeting with staff']),status:'Checked in'};C.visitors.unshift(v);C.access.unshift({time:mins12(state.simMinutes),person:v.name,action:'Visitor check-in / badge issued'});}
+function spawnRequest(){let C=state.connected90,e=pick(activeEmployees());if(!e)return;C.requests.unshift({id:uid('req'),from:e.name,type:pick(['Classroom Supply','Professional Development','Schedule Change','Furniture','Field Trip','Additional Support','Personal Day']),detail:pick(['Requests approval for an upcoming need.','Would like to discuss available funding.','Submitted through normal school workflow.']),status:'Pending',amount:pick([0,75,180,425,900])});}
+function resolveRequest(id,yes){let x=state.connected90.requests.find(r=>r.id===id);if(!x)return;x.status=yes?'Approved':'Denied / Deferred';if(yes&&x.amount){state.connected90.budgets.building=Math.max(0,state.connected90.budgets.building-x.amount);if(x.type==='Furniture'||x.type==='Classroom Supply')state.connected90.orders.unshift({id:uid('ord'),item:x.type,for:x.from,cost:x.amount,status:'Ordered',date:state.date});}toast(`${x.type}: ${x.status}`);render();}
+function advanceOrders(){let C=state.connected90;C.orders.forEach(o=>{if(Math.random()<.05)o.status=o.status==='Ordered'?'Shipped':o.status==='Shipped'?'Delivered':o.status});}
+function proposeFieldTrip(){let C=state.connected90,t=pick(activeEmployees().filter(e=>e.category==='Teacher'));if(!t)return;C.fieldTrips.unshift({id:uid('trip'),teacher:t.name,room:t.room,destination:pick(['Science Museum','Nature Center','Historic Farm','Children’s Museum','Local Arts Center']),date:'Upcoming',permission:rnd(65,95),bus:'Requested',nurse:'Reviewing medications',cafeteria:'Sack lunches requested',status:'Proposed'});render();}
+function approveTrip(id){let x=state.connected90.fieldTrips.find(y=>y.id===id);if(!x)return;x.status='Approved';x.bus='Assigned';x.cafeteria='Sack lunches confirmed';toast(`Field trip approved for ${x.room}.`);render();}
+function v90SubCalloff(){
+ let C=state.connected90,e=pick(activeEmployees().filter(x=>x.category==='Teacher'));if(!e)return;let pool=state.subPool||[];let sub=pool.length?pick(pool):null;
+ C.subs.unshift({date:state.date,teacher:e.name,room:e.room,callTime:pick(['5:43 AM','5:58 AM','6:12 AM']),sub:sub?.name||'Unfilled',status:sub?'Accepted':'Searching',checkin:sub?'7:25 AM':'—'});
+}
+function v90AccessTick(){let C=state.connected90;if(Math.random()<.006){let e=pick(activeEmployees());if(e)C.access.unshift({time:mins12(state.simMinutes),person:e.name,action:state.simMinutes<480?'Badge entry':'Building activity'});}}
+function v90StudentLife(){let C=state.connected90;if(Math.random()<.004){let a=pick(state.students.filter(x=>x.status==='Active'));if(!a)return;let b=pick(state.students.filter(x=>x.status==='Active'&&x.id!==a.id&&x.grade===a.grade));if(b)C.social.studentConnections.unshift({date:state.date,students:[`${a.first} ${a.last}`,`${b.first} ${b.last}`],event:pick(['Worked well together','Friendship strengthened','Minor disagreement resolved by teacher','Requested to work together'])});}}
+function updateEnrollmentPressure(){let E=state.connected90.enrollmentPressure;let growth=(state.world?.neighborhoods||[]).reduce((n,x)=>n+(x.growth||0),0);E.projection=Math.max(enrollment(),Math.round(enrollment()+growth/8));let pct=E.projection/E.capacity;E.status=pct>.98?'Capacity concern':pct>.9?'Watch enrollment':'Stable';if(pct>1.03&&!E.addition)E.addition={status:'District feasibility review',rooms:6,phase:'Concept',year:parseInt(state.date)+2};}
+function advanceAddition(){let a=state.connected90.enrollmentPressure.addition;if(!a)return;if(Math.random()<.04)a.phase=a.phase==='Concept'?'Board / Capital Review':a.phase==='Board / Capital Review'?'Design':a.phase==='Design'?'Construction':'Construction';}
+function rareIncident(){let C=state.connected90;if(Math.random()>.0008)return;let x={date:state.date,time:mins12(state.simMinutes),type:pick(['Power interruption','Water service issue','Severe weather warning','HVAC failure','Unexpected fire alarm']),status:'Active',response:'School response procedures initiated'};C.incidents.unshift(x);addLiveAlert('⚠️',x.type,x.response,'Urgent','Building');}
+function v90FamilyCard(st){let key=st.last||'Family';let C=state.connected90;C.familyHistory[key]=C.familyHistory[key]||{contacts:0,years:1,note:'Family known to Lincoln'};return C.familyHistory[key];}
+function v90ConnectedPanel(){
+ ensureV90State();v90Daily();let host=$('v89Staffing');if(!host)return;let box=$('v90Connected');if(!box){box=document.createElement('section');box.id='v90Connected';box.className='card padded';host.parentNode.insertBefore(box,host.nextSibling)}let C=state.connected90;
+ box.innerHTML=`<div class="section-head"><div><h2>V9.0 Connected School</h2><p class="muted">One school: people, office, operations, money, families and facilities affect each other.</p></div><button id="tripPropBtn" class="primary">🚌 Propose Field Trip</button></div>
+ <div class="connected-grid">
+ <div><h3>🏢 Front Office</h3>${C.office.queue.slice(0,6).map(x=>`<div class="compact-item"><strong>${x.type}</strong> — ${x.text}<br><span class="muted">${x.principal?'Needs principal':'Handled by '+x.owner}</span></div>`).join('')}</div>
+ <div><h3>👔 Leadership Team</h3>${Object.entries(C.leaderDays).map(([r,d])=>`<div class="compact-item"><strong>${r}</strong><br>${d.agenda.slice(0,3).map(x=>`${x.time} ${x.item}`).join(' • ')}</div>`).join('')}</div>
+ <div><h3>📝 Employee Requests</h3>${C.requests.slice(0,5).map(x=>`<div class="compact-item"><strong>${x.from}: ${x.type}</strong> ${x.amount?'$'+x.amount:''}<br>${x.detail}<br><span class="muted">${x.status}</span>${x.status==='Pending'?`<br><button data-rqyes="${x.id}">Approve</button> <button data-rqno="${x.id}">Deny/Defer</button>`:''}</div>`).join('')||'<p class="muted">No pending requests.</p>'}</div>
+ <div><h3>📦 Purchasing</h3><p>Building discretionary: <strong>$${C.budgets.building.toLocaleString()}</strong> • PTO: <strong>$${C.budgets.pto.toLocaleString()}</strong></p>${C.orders.slice(0,5).map(o=>`<div class="compact-item"><strong>${o.item}</strong> for ${o.for}<br>$${o.cost} • ${o.status}</div>`).join('')}</div>
+ <div><h3>🚌 Field Trips</h3>${C.fieldTrips.slice(0,4).map(x=>`<div class="compact-item"><strong>${x.room} → ${x.destination}</strong><br>Permission ${x.permission}% • Bus ${x.bus} • Nurse ${x.nurse}<br><span class="muted">${x.status}</span>${x.status==='Proposed'?`<br><button data-trip="${x.id}">Approve Trip</button>`:''}</div>`).join('')||'<p class="muted">No trips in workflow.</p>'}</div>
+ <div><h3>🚪 Building Access / Visitors</h3>${C.visitors.slice(0,4).map(v=>`<div class="compact-item"><strong>${v.time} ${v.name}</strong><br>${v.purpose} • ${v.status}</div>`).join('')}${C.access.slice(0,3).map(a=>`<div class="position-row"><span>${a.time} ${a.person}</span><strong>${a.action}</strong></div>`).join('')}</div>
+ <div><h3>🧑‍🤝‍🧑 School Social World</h3>${C.social.rumors.slice(0,3).map(r=>`<div class="compact-item">${r.text}<br><span class="muted">${r.certainty}</span></div>`).join('')}${C.social.studentConnections.slice(0,3).map(x=>`<div class="compact-item">${x.students.join(' & ')} — ${x.event}</div>`).join('')}</div>
+ <div><h3>🏗️ Enrollment & Capacity</h3><div class="compact-item">Current ${enrollment()} • Projected ${C.enrollmentPressure.projection} • Capacity ${C.enrollmentPressure.capacity}<br><strong>${C.enrollmentPressure.status}</strong></div>${C.enrollmentPressure.addition?`<div class="compact-item"><strong>Possible ${C.enrollmentPressure.addition.rooms}-room addition</strong><br>${C.enrollmentPressure.addition.phase} • target ${C.enrollmentPressure.addition.year}</div>`:''}</div>
+ <div><h3>⚠️ Rare Events</h3>${C.incidents.slice(0,4).map(x=>`<div class="compact-item"><strong>${x.type}</strong> — ${x.status}<br>${x.response}</div>`).join('')||"<p class='muted'>Normal school day. That is a good thing.</p>"}</div>
+ </div>`;
+ $('tripPropBtn').onclick=proposeFieldTrip;document.querySelectorAll('[data-rqyes]').forEach(b=>b.onclick=()=>resolveRequest(b.dataset.rqyes,true));document.querySelectorAll('[data-rqno]').forEach(b=>b.onclick=()=>resolveRequest(b.dataset.rqno,false));document.querySelectorAll('[data-trip]').forEach(b=>b.onclick=()=>approveTrip(b.dataset.trip));
+}
+function v90AfterDay(){
+ ensureV90State();let C=state.connected90;C.today={generated:false};if(Math.random()<.12)v90SubCalloff();C.orders.forEach(o=>{if(o.status==='Delivered')state.schoolHistory.unshift({date:state.date,text:`${o.item} delivered for ${o.for}.`})});}
+const tickV90Old=playableTick;playableTick=function(minutes=5){tickV90Old(minutes);v90AccessTick();v90StudentLife();advanceOrders();advanceAddition();rareIncident();};
+const dayV90Old=advanceDay;advanceDay=function(){v90AfterDay();dayV90Old();ensureV90State();v90Daily();};
+const renderV90Old=render;render=function(){ensureV90State();renderV90Old();v90ConnectedPanel();};
+const loadV90Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV90State();toast('V9.0 Connected School save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V89_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV90State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V9.0 Connected School.'});toast('Your V8.9 school was upgraded to V9.0.');render();return;}catch(e){console.error(e)}}return loadV90Old();};
 
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();
