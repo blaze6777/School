@@ -70,3 +70,6 @@
 
 /* V9.0.6 Phone + Tasks */
 .phone-alert-action,.phone-message-go{margin-top:8px}.clickable-brief{cursor:pointer;transition:transform .12s ease,box-shadow .12s ease}.clickable-brief:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.12)}.task-modal-row{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center}.task-modal-list{display:grid;gap:8px}
+
+/* V9.1 Principal Experience */
+.principal-hub-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;margin:14px 0}.principal-hub-grid button{min-height:70px;font-weight:700}.v91-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0}.v91-strip button{padding:12px}.v91-columns{display:grid;grid-template-columns:1fr 1fr;gap:14px}.principal-start{max-width:760px}.principal-start h2{margin-bottom:4px}@media(max-width:800px){.v91-strip,.v91-columns{grid-template-columns:1fr 1fr}}@media(max-width:520px){.v91-strip,.v91-columns{grid-template-columns:1fr}}

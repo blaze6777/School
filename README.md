@@ -1,11 +1,24 @@
-# Lincoln Elementary Simulator — V9.0.6 Phone + Tasks Hotfix
-Build 2026-09-03 14:31 ET.
+# Lincoln Elementary Simulator — V9.1 Principal Experience
+Build 2026-09-03 16:10 ET.
 
-Fixes two interaction gaps:
-- Parent-call alerts in the Principal Phone are now actionable. "Answer Parent Call" opens the full parent conversation flow instead of leaving a passive alert.
-- Teacher "wants to talk" phone alerts can now be acted on, and room-based alerts can move the principal to the location.
-- Staff-message entries with a classroom location now have a Go There button.
-- Principal Tasks on the Command Center are now directly accessible. The "principal tasks" briefing card is clickable, the Principal Workday section has an Open Tasks button, and Principal Desk → Task Folder opens the actual task list.
-- Task list shows due date/priority and lets the principal work a task, advancing time and recording completion.
+Major realism pass built on V9.0.7:
+- Start My Day at 6:45 AM in the principal office.
+- Secretary/front-office gatekeeper with Normal, Protect Time, and Open Door modes.
+- School radio traffic; most messages are informational while urgent admin calls become alerts.
+- Office traffic for deliveries, attendance, routine family calls, visitors, dismissal changes, and escalations.
+- Student office/discipline scenes with student perspective and multiple responses.
+- Persistent principal promises/follow-up tasks.
+- Nurse escalation scenes.
+- Substitute check-in lifecycle with badge and lesson-plan handoff.
+- Meeting workflow with attend/delegate/reschedule and time cost.
+- Field-trip logistics and off-campus status.
+- Weather operations decisions.
+- Purchasing requests that create orders tied to rooms.
+- School tradition planning.
+- Staff life/career moments.
+- Morning arrival and dismissal radio/office activity.
+- Principal Mode hub plus Command Center Principal Experience panel.
+- Existing V9.0.7 stability, slower clock, deeper parent calls, phone, tasks, classroom and facilities interactions retained.
+- V9.1 uses its own save slot while still falling back through the existing V9.0 save loader for upgrades.
 
-Existing V9.0.5 save progress is preserved.
+This is a broad first integrated pass. Some systems are intentionally lightweight rather than a full district-grade simulation, but the actions now connect to time, history, tasks, rooms, people, orders, and follow-up where practical.
