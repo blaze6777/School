@@ -1,6 +1,6 @@
-# Lincoln Elementary Simulator — V9.0.2 Hotfix
-Build 2026-09-03 13:12 ET.
+# Lincoln Elementary Simulator — V9.0.4 Parent Conversation Hotfix
+Build 2026-09-03 13:47 ET.
 
-Second startup-repair hotfix. This version runs a broad legacy-save repair pass before the entire V8.1–V9.0 migration/render chain. It normalizes missing arrays and nested structures across students, families, employees, applications, substitutes, PTO, neighborhoods, world data, operations, People & Presence, Generations & Staffing, and Connected School. The startup banner now also displays the first stack location if any error remains, making the exact failing function visible instead of only showing the message.
+Fixes parent interactions from school-day interruptions. Choosing “See parent now” or “Take the call” now opens a real named parent/student conversation instead of simply clearing the interruption. The player gets response choices, time advances appropriately, family/student/school history is updated, and follow-up tasks are created based on the response.
 
-Existing progress is preserved.
+Existing V9.0.3 save progress is preserved.

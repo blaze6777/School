@@ -1,5 +1,5 @@
-const GAME_VERSION="9.0.2";
-const GAME_BUILD="2026-09-03 13:12 ET";
+const GAME_VERSION="9.0.4";
+const GAME_BUILD="2026-09-03 13:47 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
@@ -1020,12 +1020,17 @@ function openYearbook(){let staff=activeEmployees().slice(0,16).map(e=>e.name).j
 function v8RandomRealLifeEvent(){
  ensureV8State();if(state.simMinutes<500||state.simMinutes>910)return;
  let r=Math.random();
- if(r<.20&&state.techTickets.length<8){let room=pick(state.rooms.filter(x=>x.type==='Classroom'));state.techTickets.unshift({id:uid('tech'),issue:pick(['Interactive display not connecting','Printer offline','Student device cracked','Teacher laptop dock not detecting display']),location:room.id,status:'Open',age:0});if(routineHandled('Devices & classroom technology'))setTimeout(()=>{},0);}
- else if(r<.38){let fam=pick(state.families);if(fam){memoryAdd(fam,pick(['Office resolved a transportation change.','Family contacted Lincoln about a classroom concern.','Family attended a school event.']));}}
+ if(r<.20&&state.techTickets.length<8){
+   let rooms=(state.rooms||[]).filter(x=>String(x.type||'').toLowerCase()==='classroom'||x.grade);
+   let room=pick(rooms);
+   if(room)state.techTickets.unshift({id:uid('tech'),issue:pick(['Interactive display not connecting','Printer offline','Student device cracked','Teacher laptop dock not detecting display']),location:room.id,status:'Open',age:0});
+   if(room&&routineHandled('Devices & classroom technology'))setTimeout(()=>{},0);
+ }
+ else if(r<.38){let fam=pick(state.families||[]);if(fam){memoryAdd(fam,pick(['Office resolved a transportation change.','Family contacted Lincoln about a classroom concern.','Family attended a school event.']));}}
  else if(r<.52){let e=pick(activeEmployees());if(e&&Math.random()<.25){e.morale=Math.max(45,e.morale-1);memoryAdd(e,'Experienced a demanding school day.');}}
- else if(r<.66){let s=pick(state.students.filter(x=>x.status==='Active'));if(s&&Math.random()<.35){s.behavior.incidents++;s.behavior.trend=s.behavior.incidents>=3?'Needs support':'Watch';memoryAdd(s,'Behavior incident documented and reviewed by staff.');}}
- else if(r<.80){let z=pick(state.custodialZones);z.score=Math.max(70,z.score-1);}
- else {let p=pick(state.capitalProjects);if(p&&p.stage!=='Complete'){p.progress=Math.min(100,p.progress+5);if(p.progress>=100)p.stage='Complete';else if(p.progress>=75)p.stage='Inspection / Closeout';else if(p.progress>=35)p.stage='Construction';else if(p.progress>=15)p.stage='Bid / Procurement';}}
+ else if(r<.66){let st=pick((state.students||[]).filter(x=>x.status==='Active'));if(st&&Math.random()<.35){st.behavior=st.behavior||{incidents:0,trend:'Typical'};st.behavior.incidents=(st.behavior.incidents||0)+1;st.behavior.trend=st.behavior.incidents>=3?'Needs support':'Watch';memoryAdd(st,'Behavior incident documented and reviewed by staff.');}}
+ else if(r<.80){let z=pick(state.custodialZones||[]);if(z)z.score=Math.max(70,(z.score??90)-1);}
+ else {let p=pick(state.capitalProjects||[]);if(p&&p.stage!=='Complete'){p.progress=Math.min(100,(p.progress||0)+5);if(p.progress>=100)p.stage='Complete';else if(p.progress>=75)p.stage='Inspection / Closeout';else if(p.progress>=35)p.stage='Construction';else if(p.progress>=15)p.stage='Bid / Procurement';}}
 }
 const renderBeforeV8=render;render=function(){ensureV8State();renderBeforeV8();renderV8();};
 const playableTickBeforeV8=playableTick;playableTick=function(minutes=5){playableTickBeforeV8(minutes);v8DailyProgress(minutes);if(Math.random()<.12)v8RandomRealLifeEvent();render();};
@@ -1124,7 +1129,78 @@ function ensureV84State(){ensureV83State();state.version=8.4;state.principalTask
 function addTask(text,due='Today',priority='Normal'){ensureV84State();if(!state.principalTasks.some(x=>!x.done&&x.text===text))state.principalTasks.unshift({id:uid('task'),text,due,priority,done:false,created:state.date});}
 function v84MorningBrief(){ensureV84State();let abs=activeEmployees().filter(e=>e.status==='Absent'||e.leave).length,open=state.workOrders.filter(w=>w.status==='Open').length,vac=state.positions.filter(p=>p.filled<p.authorized).length;state.dailyBrief=[`${abs} staff absent / on leave`,`${open} open work orders`,`${vac} staffing vacancies`,`${state.principalTasks.filter(x=>!x.done).length} principal tasks`,`${state.storylines.filter(x=>x.status==='Open').length} active storylines`];if(abs)addTask('Review substitute and coverage plan','7:45 AM','High');if(open>2)addTask('Review priority facilities work orders','Today','Normal');}
 function v84Render(){ensureV84State();let target=document.querySelector('#view-command .stack');if(!target)return;let box=$('v84SchoolDay');if(!box){box=document.createElement('section');box.id='v84SchoolDay';box.className='card padded';let attention=$('attentionList')?.closest('section');(attention?.parentNode||target).insertBefore(box,attention||null);}box.innerHTML=`<div class="section-head"><div><h2>Principal Workday</h2><p class="muted">Your school runs itself. Step in where leadership is needed.</p></div><button id="v84BriefBtn" class="secondary">Refresh Briefing</button></div><div class="v84-columns"><div><h3>Today’s Tasks</h3><div>${state.principalTasks.filter(x=>!x.done).slice(0,8).map(x=>`<button class="v84-task" data-task="${x.id}"><span>☐ ${x.text}</span><small>${x.due} • ${x.priority}</small></button>`).join('')||'<p class="muted">Nothing urgent. Walk the building or visit classrooms.</p>'}</div></div><div><h3>Active Storylines</h3>${state.storylines.filter(x=>x.status==='Open').slice(0,5).map(x=>`<div class="compact-item"><strong>${x.title}</strong><br>${x.stage}<br><span class="muted">${x.next}</span></div>`).join('')||'<p class="muted">No active multi-day issues.</p>'}</div></div>`;$('v84BriefBtn').onclick=()=>{v84MorningBrief();render()};box.querySelectorAll('[data-task]').forEach(b=>b.onclick=()=>{let t=state.principalTasks.find(x=>x.id===b.dataset.task);t.done=true;state.simMinutes=Math.min(1080,state.simMinutes+10);toast('Task completed.');render();});let bc=$('briefingCards');if(bc){v84MorningBrief();bc.innerHTML=state.dailyBrief.map(x=>`<div class="brief-card"><strong>${x}</strong></div>`).join('');}}
-function maybeInterrupt(){ensureV84State();if(state.simMinutes<450||state.simMinutes>960||Math.random()>.045)return;let e=pick([{title:'Parent Waiting',text:'A parent arrived unexpectedly and is asking to speak with you.',choices:['See parent now','Ask AP to handle','Schedule meeting']},{title:'Office Call',text:'The secretary has a family on the phone asking specifically for the principal.',choices:['Take the call','Have secretary take a message','Delegate to AP']},{title:'Classroom Support',text:'A teacher is requesting brief administrative support with a recurring classroom concern.',choices:['Go to classroom','Send AP','Ask teacher to document and meet later']},{title:'Transportation Update',text:'A bus is running late. Transportation has already contacted the office.',choices:['No action needed','Check dismissal plan']},{title:'Facilities Alert',text:'Custodial staff found a room issue that may affect instruction.',choices:['Inspect it','Delegate to head custodian','Create follow-up task']}]);state.interruptions.unshift({id:uid('int'),date:state.date,time:mins12(state.simMinutes),...e});openModal(`📱 ${e.title}`,`<p>${e.text}</p><p class="muted">You are currently at ${locationLabel(state.principalLocation)}.</p><div class="actions">${e.choices.map((c,i)=>`<button class="${i===0?'primary':'secondary'} v84choice" data-c="${c}">${c}</button>`).join('')}</div>`);document.querySelectorAll('.v84choice').forEach(b=>b.onclick=()=>{let c=b.dataset.c;if(/now|call|classroom|inspect/i.test(c))state.simMinutes=Math.min(1080,state.simMinutes+20);if(/Schedule|follow-up|message/i.test(c))addTask(`${e.title}: ${e.text}`,'Today','Normal');state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});closeModal();render();});}
+
+function v904ParentConversation(sourceTitle='Parent Waiting'){
+ ensureV90State();
+ let active=(state.students||[]).filter(x=>x.status==='Active');
+ let st=pick(active);
+ let fam=st?famFor(st):pick(state.families||[]);
+ let famName=fam?.name||fam?.lastName?`${fam.name||fam.lastName} Family`:'Lincoln Family';
+ let studentName=st?`${st.first} ${st.last}`:'their child';
+ let grade=st?.grade?`Grade ${st.grade}`:'Lincoln student';
+ let parentName=(fam?.contacts&&fam.contacts[0]?.name)||`${st?.last||fam?.lastName||'Family'} Parent/Guardian`;
+ let topic=pick([
+  {kind:'Bus concern',opening:`${parentName} wants to discuss something ${studentName} reported from the bus. They are concerned that another student may have been bothering them.`,follow:'Contact transportation and review the concern.'},
+  {kind:'Classroom concern',opening:`${parentName} says ${studentName} has been coming home frustrated about something happening in class and wants to make sure the school is aware.`,follow:'Speak with the classroom teacher and follow up with the family.'},
+  {kind:'Peer conflict',opening:`${parentName} says ${studentName} has had a repeated problem with another student and wants to know what support the school can provide.`,follow:'Ask the counselor/AP to gather information and follow up.'},
+  {kind:'Academic concern',opening:`${parentName} is worried about ${studentName}'s recent progress and wants to understand what supports are currently in place.`,follow:'Review classroom/MTSS information and follow up with the family.'},
+  {kind:'Placement question',opening:`${parentName} has questions about ${studentName}'s classroom placement and wants to understand the school's reasoning.`,follow:'Review the placement record and explain the process to the family.'}
+ ]);
+ state.simMinutes=Math.min(1080,state.simMinutes+5);
+ let html=`<div class="app-sheet">
+  <h3>${parentName}</h3>
+  <p><strong>${studentName}</strong> • ${grade}</p>
+  <div class="app-section"><strong>${topic.kind}</strong><p>${topic.opening}</p></div>
+  <div class="app-section"><strong>How do you respond?</strong>
+   <div class="actions parent-conversation-actions">
+    <button class="primary" data-presp="listen">Tell me exactly what happened.</button>
+    <button class="secondary" data-presp="investigate">I'll look into this and follow up today.</button>
+    <button class="secondary" data-presp="delegate">I'll bring the appropriate staff member into this.</button>
+    <button class="secondary" data-presp="schedule">Let's schedule a longer meeting.</button>
+   </div>
+  </div>
+ </div>`;
+ openModal(`👪 Parent Conversation — ${topic.kind}`,html);
+ document.querySelectorAll('[data-presp]').forEach(b=>b.onclick=()=>{
+   let choice=b.dataset.presp,record='',taskText='';
+   if(choice==='listen'){record=`Principal listened to ${parentName}'s ${topic.kind.toLowerCase()} and asked clarifying questions.`;taskText=topic.follow;state.simMinutes=Math.min(1080,state.simMinutes+12);}
+   if(choice==='investigate'){record=`Principal promised ${parentName} a same-day follow-up regarding ${topic.kind.toLowerCase()}.`;taskText=topic.follow;state.simMinutes=Math.min(1080,state.simMinutes+10);}
+   if(choice==='delegate'){record=`Principal involved the appropriate staff member in ${parentName}'s ${topic.kind.toLowerCase()}.`;taskText=`Coordinate staff response: ${topic.follow}`;state.simMinutes=Math.min(1080,state.simMinutes+8);}
+   if(choice==='schedule'){record=`Principal scheduled additional time with ${parentName} regarding ${topic.kind.toLowerCase()}.`;taskText=`Scheduled family meeting: ${topic.kind} — ${studentName}`;state.simMinutes=Math.min(1080,state.simMinutes+5);}
+   if(fam){fam.memories=fam.memories||[];fam.memories.unshift({date:state.date,text:record});fam.contactsCount=(fam.contactsCount||0)+1;}
+   if(st){st.timeline=st.timeline||[];st.timeline.unshift({date:state.date,text:`Family contacted school: ${topic.kind}.`});}
+   state.connected90.familyHistory=state.connected90.familyHistory||{};
+   let key=st?.last||fam?.lastName||fam?.name||'Family';
+   let fh=state.connected90.familyHistory[key]=state.connected90.familyHistory[key]||{contacts:0,years:1,note:'Family known to Lincoln'};
+   fh.contacts=(fh.contacts||0)+1;fh.lastContact=state.date;fh.lastTopic=topic.kind;
+   state.schoolHistory.unshift({date:state.date,text:record});
+   if(taskText)addTask(taskText,'Today',choice==='investigate'?'High':'Normal');
+   closeModal();toast('Parent conversation documented and follow-up created.');render();
+ });
+}
+function maybeInterrupt(){
+ ensureV84State();if(state.simMinutes<450||state.simMinutes>960||Math.random()>.045)return;
+ let e=pick([
+  {title:'Parent Waiting',text:'A parent arrived unexpectedly and is asking to speak with you.',choices:['See parent now','Ask AP to handle','Schedule meeting']},
+  {title:'Office Call',text:'The secretary has a family on the phone asking specifically for the principal.',choices:['Take the call','Have secretary take a message','Delegate to AP']},
+  {title:'Classroom Support',text:'A teacher is requesting brief administrative support with a recurring classroom concern.',choices:['Go to classroom','Send AP','Ask teacher to document and meet later']},
+  {title:'Transportation Update',text:'A bus is running late. Transportation has already contacted the office.',choices:['No action needed','Check dismissal plan']},
+  {title:'Facilities Alert',text:'Custodial staff found a room issue that may affect instruction.',choices:['Inspect it','Delegate to head custodian','Create follow-up task']}
+ ]);
+ state.interruptions.unshift({id:uid('int'),date:state.date,time:mins12(state.simMinutes),...e});
+ openModal(`📱 ${e.title}`,`<p>${e.text}</p><p class="muted">You are currently at ${locationLabel(state.principalLocation)}.</p><div class="actions">${e.choices.map((c,i)=>`<button class="${i===0?'primary':'secondary'} v84choice" data-c="${c}">${c}</button>`).join('')}</div>`);
+ document.querySelectorAll('.v84choice').forEach(b=>b.onclick=()=>{
+   let c=b.dataset.c;
+   if((e.title==='Parent Waiting'&&c==='See parent now')||(e.title==='Office Call'&&c==='Take the call')){
+     state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});
+     v904ParentConversation(e.title);return;
+   }
+   if(/now|call|classroom|inspect/i.test(c))state.simMinutes=Math.min(1080,state.simMinutes+20);
+   if(/Schedule|follow-up|message/i.test(c))addTask(`${e.title}: ${e.text}`,'Today','Normal');
+   state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});
+   closeModal();render();
+ });
+}
 function maybeStoryline(){ensureV84State();if(state.storylines.filter(x=>x.status==='Open').length>=4||Math.random()>.018)return;let s=pick(state.students.filter(x=>x.status==='Active')),t=teacherForRoom(s?.room),f=s?famFor(s):null;let templates=[{title:`Reading concern — ${s?.first||'Student'} ${s?.last||''}`,stage:`${t?.name||'Teacher'} reports limited progress despite classroom support.`,next:'Collect intervention data and discuss at the next MTSS review.'},{title:`Family communication — ${f?.name||'Lincoln family'}`,stage:'A family has raised a recurring concern and wants clearer follow-up.',next:'Teacher and principal should coordinate a response this week.'},{title:'Staffing signal',stage:'A staff member has begun asking HR questions about next year.',next:'No formal resignation exists. Watch for transfer or retirement signals.'},{title:'Building concern',stage:'A recurring facilities issue has appeared in the same area twice.',next:'Head custodian should inspect and determine whether maintenance escalation is needed.'}];let q=pick(templates);state.storylines.unshift({id:uid('story'),...q,status:'Open',started:state.date,age:0});addTask(`Follow up: ${q.title}`,'This week','Normal');}
 function advanceStories(){ensureV84State();state.storylines.filter(x=>x.status==='Open').forEach(x=>{x.age++;if(x.age===2)x.stage=`Follow-up: ${x.stage} Additional information is now available.`;if(x.age>=5&&Math.random()<.45){x.status='Resolved';state.schoolHistory.unshift({date:state.date,text:`Resolved storyline: ${x.title}.`});}});}
 function overnightSchool(){ensureV84State();let calloffs=activeEmployees().filter(e=>e.status==='Active'&&Math.random()<.018);calloffs.forEach(e=>{e.status='Absent';let sub=pick(state.subPool.filter(s=>s.reliability>80));if(e.category==='Teacher'&&sub)addTask(`${e.name} absent — ${sub.name} tentatively accepted coverage`,'7:30 AM','High');});state.rooms.forEach(r=>{if(r.cleanliness<92)r.cleanliness=clamp(r.cleanliness+rnd(5,12),0,100)});advanceStories();v84MorningBrief();}
