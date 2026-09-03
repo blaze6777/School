@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Lincoln Elementary — Real Life School V8</title>
-<link rel="stylesheet" href="styles.css?v=8.0">
+<title>Lincoln Elementary — People & Leadership V8.1</title>
+<link rel="stylesheet" href="styles.css?v=8.5">
 </head>
 <body>
 <div id="app">
 <header class="topbar">
-  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Real Life School • K–6</div><div id="versionBadge" class="version-badge">Version 8.0 • Build 2026-09-02 14:10 ET</div></div>
+  <div class="brand"><div class="brand-title">🏫 LINCOLN ELEMENTARY</div><div class="brand-sub">Living World • School Day • K–6</div><div id="versionBadge" class="version-badge">Version 8.5 • Build 2026-09-03 08:30 ET</div></div>
   <nav class="nav-tabs" aria-label="Game sections">
     <button class="nav-btn active" data-view="command">🏠 Command</button>
     <button class="nav-btn" data-view="building">🗺️ Building</button>
@@ -63,7 +63,7 @@
     </div>
     <aside class="stack">
       <section class="panel"><h2>School Snapshot</h2><div id="snapshot" class="panel-body"></div></section>
-      <section class="panel"><h2>Quick Actions</h2><div class="panel-body quick-grid"><button id="postVacancyQuick">📌 Post Vacancy</button><button id="enrollStudentQuick">🎒 Enroll Student</button><button id="newWorkOrderQuick">🔧 Work Order</button><button id="weatherDecisionQuick">🌨️ Weather Decision</button><button id="fieldTripQuick">🚌 Field Trip</button><button id="boardRequestQuick">🏛️ Board Request</button></div></section>
+      <section class="panel"><h2>Quick Actions</h2><div class="panel-body quick-grid"><button id="postVacancyQuick">📌 Post Vacancy</button><button id="enrollStudentQuick">🎒 Enroll Student</button><button id="newWorkOrderQuick">🔧 Work Order</button><button id="weatherDecisionQuick">🌨️ Weather Decision</button><button id="fieldTripQuick">🚌 Field Trip</button><button id="boardRequestQuick">🏛️ Board Request</button><button id="teamMeetingQuickBtn">👥 Team Meeting</button></div></section>
       <section class="panel"><h2>Recent Activity</h2><div id="recentActivity" class="panel-body compact-list"></div></section>
     </aside>
   </div>
@@ -112,6 +112,14 @@
     <section class="card padded"><div class="section-head"><div><h2>Student Life & MTSS</h2><p class="muted">Academic growth, intervention tiers and behavior patterns develop over time.</p></div><button id="mtssReviewBtn" class="secondary">Run MTSS Review</button></div><div id="mtssBoard"></div></section>
     <section class="card padded"><h2>Family & Records Desk</h2><div id="familyRecordsBoard"></div></section>
   </div>
+  <div class="v82-grid">
+    <section class="card padded"><div class="section-head"><div><h2>Classroom Placement Studio</h2><p class="muted">Balance academics, supports, behavior, family requests and teacher fit.</p></div><button id="placementBtn" class="primary">Build Next-Year Classes</button></div><div id="placementBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Registration & Kindergarten Roundup</h2><p class="muted">Incoming families, sibling forecasting, residency and records.</p></div><button id="roundupBtn" class="secondary">Run Kindergarten Roundup</button></div><div id="registrationBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Student Support Meetings</h2><p class="muted">MTSS, IEP and 504 workflows with deadlines and follow-up.</p></div><button id="studentMeetingBtn" class="secondary">Hold Student Meeting</button></div><div id="studentMeetingsBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>School Life</h2><p class="muted">Trips, assemblies, conferences, testing, picture day and family events.</p></div><button id="schoolEventBtn" class="secondary">Plan School Event</button></div><div id="schoolLifeBoard"></div></section>
+    <section class="card padded"><h2>PTO, Volunteers & Family Relationships</h2><div id="familyLifeBoard"></div></section>
+    <section class="card padded"><h2>Promotion & Alumni</h2><div id="alumniBoard"></div></section>
+  </div>
 </section>
 
 <section id="view-staff" class="view">
@@ -123,6 +131,8 @@
   <div class="v8-grid">
     <section class="card padded"><div class="section-head"><div><h2>Careers, Contracts & Memory</h2><p class="muted">Employees remember major decisions and build careers over many years.</p></div><button id="contractReviewBtn" class="secondary">Spring Contract Review</button></div><div id="careerMemoryBoard"></div></section>
     <section class="card padded"><h2>Delegation</h2><p class="muted">Strong leaders solve routine problems before they reach your desk.</p><div id="delegationBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>People & Leadership</h2><p class="muted">Observations, leadership evidence and staff development.</p></div></div><div id="peopleLeadershipBoard"></div></section>
+    <section class="card padded"><div class="section-head"><div><h2>Team Meetings & PLCs</h2><p class="muted">Hold real grade-level, PLC, leadership and staff meetings.</p></div><button id="teamMeetingBtn" class="primary">Hold Team Meeting</button></div><div id="meetingBoard"></div></section>
   </div>
 </section>
 
@@ -133,7 +143,7 @@
     <section class="card padded"><h2>Leave & Compliance</h2><div id="hrCompliance"></div></section>
     <section class="card padded"><h2>Substitute Pool</h2><div id="subPool"></div></section>
     <section class="card padded"><div class="section-head"><div><h2>PTO & Attendance Banks</h2><p class="muted">Sick/personal balances, attendance patterns and coverage pressure.</p></div><button id="coveragePlanBtn" class="secondary">Auto-Build Coverage Plan</button></div><div id="ptoBoard"></div></section>
-    <section class="card padded"><h2>Hiring Clearance</h2><div id="clearanceBoard"></div></section>
+    <section class="card padded"><h2>Hiring Clearance</h2><div id="clearanceBoard"></div></section><section class="card padded"><h2>Retention, Retirement & Departures</h2><p class="muted">Retirement develops over time; resignations create real vacancies and former-employee history.</p><div id="departureBoard"></div></section>
   </div>
 </section>
 
@@ -212,7 +222,7 @@
 <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="modal-card"><div class="modal-head"><h2 id="modalTitle"></h2><button id="modalClose" class="icon-btn" aria-label="Close">✕</button></div><div id="modalBody" class="modal-body"></div></div>
 </div>
-<script src="app.js?v=8.0"></script>
+<script src="app.js?v=8.5"></script>
 <button id="phoneBtn" class="phone-fab" title="Principal phone">📱</button>
 <div id="phonePanel" class="phone-panel hidden"><div class="phone-head"><strong>Principal Phone</strong><button id="phoneCloseBtn">✕</button></div><div class="phone-tabs"><button data-phone="alerts">🔔 Alerts</button><button data-phone="messages">💬 Messages</button><button data-phone="calendar">📅 Calendar</button></div><div id="phoneBody" class="phone-body"></div></div>
 <div id="walkModal" class="walk-modal hidden"><div class="walk-card"><div class="section-head"><div><h2>Walk Building</h2><p id="walkClock" class="muted"></p></div><button id="walkCloseBtn">✕</button></div><div id="walkLocation"></div><div id="walkPeople"></div><div id="walkActions" class="walk-actions"></div></div></div>
