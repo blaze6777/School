@@ -1,5 +1,5 @@
-const GAME_VERSION="9.0.4";
-const GAME_BUILD="2026-09-03 13:47 ET";
+const GAME_VERSION="9.0.6";
+const GAME_BUILD="2026-09-03 14:31 ET";
 
 const GRADES=["K","1","2","3","4","5","6"];
 const TARGETS={K:20,1:22,2:22,3:24,4:24,5:24,6:24};
@@ -1178,6 +1178,76 @@ function v904ParentConversation(sourceTitle='Parent Waiting'){
    closeModal();toast('Parent conversation documented and follow-up created.');render();
  });
 }
+
+function v905ClassroomSupport(interruption){
+ ensureV90State();
+ let teacher=state.employees.find(x=>x.id===interruption.teacherId)||pick(activeEmployees().filter(x=>x.category==='Teacher'));
+ let room=roomById(interruption.roomId||teacher?.room)||pick((state.rooms||[]).filter(r=>r.grade));
+ if(!room){toast('No classroom was available for this event.');closeModal();render();return;}
+ teacher=teacher||teacherForRoom(room.id);
+ let students=(state.students||[]).filter(x=>x.status==='Active'&&x.room===room.id);
+ let student=state.students.find(x=>x.id===interruption.studentId)||pick(students);
+ let issue=interruption.issue||pick(['repeated off-task behavior','a peer conflict that is disrupting instruction','a student refusing to begin work','a student becoming increasingly upset','a recurring classroom-management concern']);
+ state.principalLocation=room.id;state.selectedRoom=room.id;state.simMinutes=Math.min(1080,state.simMinutes+4);
+ openModal(`🏫 Classroom Support — ${room.id}`,`<div class="app-sheet">
+  <h3>${teacher?.name||'Classroom Teacher'} • ${room.name}${room.grade?` / Grade ${room.grade}`:''}</h3>
+  <p>You arrive in the room. ${teacher?.name||'The teacher'} quietly explains that ${student?`<strong>${student.first} ${student.last}</strong> is involved in `:''}<strong>${issue}</strong>.</p>
+  <div class="app-section"><strong>What do you do?</strong>
+   <div class="actions">
+    <button class="primary" data-csupport="observe">Observe for a few minutes first</button>
+    <button class="secondary" data-csupport="student">Speak privately with ${student?student.first:'the student'}</button>
+    <button class="secondary" data-csupport="teacher">Support the teacher and let them continue</button>
+    <button class="secondary" data-csupport="remove">Have the student come to the office</button>
+   </div>
+  </div>
+ </div>`);
+ document.querySelectorAll('[data-csupport]').forEach(b=>b.onclick=()=>{
+   let a=b.dataset.csupport,text='',minutes=0;
+   if(a==='observe'){minutes=8;text=`Principal responded to ${room.id}, observed the classroom concern, and gathered context before intervening.`;}
+   if(a==='student'){minutes=10;text=`Principal responded to ${room.id} and spoke privately with ${student?student.first+' '+student.last:'the student'} about ${issue}.`;}
+   if(a==='teacher'){minutes=7;text=`Principal responded to ${room.id}, supported ${teacher?.name||'the teacher'}, and allowed classroom instruction to continue.`;}
+   if(a==='remove'){minutes=12;text=`Principal responded to ${room.id} and moved ${student?student.first+' '+student.last:'the student'} to the office for follow-up regarding ${issue}.`;if(student){student.timeline=student.timeline||[];student.timeline.unshift({date:state.date,text:'Administrative classroom follow-up.'});}}
+   state.simMinutes=Math.min(1080,state.simMinutes+minutes);
+   if(teacher){teacher.memory=teacher.memory||[];teacher.memory.unshift(`${state.date}: ${text}`);}
+   state.schoolHistory.unshift({date:state.date,text});
+   if(a==='observe'||a==='student'||a==='remove')addTask(`Follow up with ${teacher?.name||'teacher'} about ${room.id} classroom support`,'Today','Normal');
+   closeModal();toast('Classroom response documented.');render();
+ });
+}
+
+function v905FacilitiesInspection(interruption){
+ ensureV90State();
+ let room=roomById(interruption.roomId)||pick((state.rooms||[]).filter(r=>r.type!=='circulation'));
+ if(!room){toast('No room was available for this facilities event.');closeModal();render();return;}
+ let issue=interruption.issue||pick(['a ceiling tile that appears damp','an unusually warm room','a loose door closer','a sink that is draining slowly','a floor area that needs attention','a light fixture that is flickering']);
+ state.principalLocation=room.id;state.selectedRoom=room.id;state.simMinutes=Math.min(1080,state.simMinutes+4);
+ openModal(`🧹 Facilities Check — ${room.id}`,`<div class="app-sheet">
+  <h3>${room.id} — ${room.name}</h3>
+  <p>You meet the custodian in the room. They point out <strong>${issue}</strong>.</p>
+  <div class="inspector-grid">
+   <div class="inspector-stat"><span>Cleanliness</span><strong>${room.cleanliness??'—'}${Number.isFinite(room.cleanliness)?'%':''}</strong></div>
+   <div class="inspector-stat"><span>Temperature</span><strong>${room.temp??'—'}${Number.isFinite(room.temp)?'°F':''}</strong></div>
+  </div>
+  <div class="app-section"><strong>What do you want done?</strong>
+   <div class="actions">
+    <button class="primary" data-facility="workorder">Create a work order</button>
+    <button class="secondary" data-facility="custodian">Have custodian handle locally</button>
+    <button class="secondary" data-facility="monitor">Monitor it for now</button>
+    <button class="secondary" data-facility="relocate">Relocate class temporarily</button>
+   </div>
+  </div>
+ </div>`);
+ document.querySelectorAll('[data-facility]').forEach(b=>b.onclick=()=>{
+   let a=b.dataset.facility,text='',minutes=0;
+   if(a==='workorder'){minutes=7;let wo=workOrder(room.id,issue,/leak|damp|warm|door/i.test(issue)?'High':'Medium');state.workOrders.push(wo);room.workOrders=room.workOrders||[];room.workOrders.push(wo.id);text=`Principal inspected ${room.id} with custodial staff and created a ${wo.priority.toLowerCase()} priority work order for ${issue}.`;}
+   if(a==='custodian'){minutes=6;text=`Principal inspected ${room.id}; head custodian will address ${issue} locally and report back.`;addTask(`Custodial follow-up: ${room.id} — ${issue}`,'Today','Normal');}
+   if(a==='monitor'){minutes=5;text=`Principal inspected ${room.id} and chose to monitor ${issue}.`;addTask(`Recheck ${room.id}: ${issue}`,'Tomorrow','Normal');}
+   if(a==='relocate'){minutes=12;text=`Principal inspected ${room.id} and temporarily relocated instruction because of ${issue}.`;addTask(`Facilities escalation for ${room.id}: ${issue}`,'Today','High');}
+   state.simMinutes=Math.min(1080,state.simMinutes+minutes);state.schoolHistory.unshift({date:state.date,text});
+   closeModal();toast('Facilities response documented.');render();
+ });
+}
+
 function maybeInterrupt(){
  ensureV84State();if(state.simMinutes<450||state.simMinutes>960||Math.random()>.045)return;
  let e=pick([
@@ -1187,16 +1257,29 @@ function maybeInterrupt(){
   {title:'Transportation Update',text:'A bus is running late. Transportation has already contacted the office.',choices:['No action needed','Check dismissal plan']},
   {title:'Facilities Alert',text:'Custodial staff found a room issue that may affect instruction.',choices:['Inspect it','Delegate to head custodian','Create follow-up task']}
  ]);
+ if(e.title==='Classroom Support'){
+   let teachers=activeEmployees().filter(x=>x.category==='Teacher'&&x.room);
+   let t=pick(teachers);let kids=t?(state.students||[]).filter(x=>x.status==='Active'&&x.room===t.room):[];
+   e.teacherId=t?.id||null;e.roomId=t?.room||null;e.studentId=pick(kids)?.id||null;
+   e.issue=pick(['repeated off-task behavior','a peer conflict that is disrupting instruction','a student refusing to begin work','a student becoming increasingly upset','a recurring classroom-management concern']);
+   if(t)e.text=`${t.name} is requesting brief administrative support in ${t.room}.`;
+ }
+ if(e.title==='Facilities Alert'){
+   let candidates=(state.rooms||[]).filter(r=>r.type!=='circulation');
+   let room=pick(candidates);e.roomId=room?.id||null;e.issue=pick(['a ceiling tile that appears damp','an unusually warm room','a loose door closer','a sink that is draining slowly','a floor area that needs attention','a light fixture that is flickering']);
+   if(room)e.text=`Custodial staff found an issue in ${room.id} — ${room.name} that may need your attention.`;
+ }
  state.interruptions.unshift({id:uid('int'),date:state.date,time:mins12(state.simMinutes),...e});
  openModal(`📱 ${e.title}`,`<p>${e.text}</p><p class="muted">You are currently at ${locationLabel(state.principalLocation)}.</p><div class="actions">${e.choices.map((c,i)=>`<button class="${i===0?'primary':'secondary'} v84choice" data-c="${c}">${c}</button>`).join('')}</div>`);
  document.querySelectorAll('.v84choice').forEach(b=>b.onclick=()=>{
    let c=b.dataset.c;
-   if((e.title==='Parent Waiting'&&c==='See parent now')||(e.title==='Office Call'&&c==='Take the call')){
-     state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});
-     v904ParentConversation(e.title);return;
-   }
+   if((e.title==='Parent Waiting'&&c==='See parent now')||(e.title==='Office Call'&&c==='Take the call')){state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});v904ParentConversation(e.title);return;}
+   if(e.title==='Classroom Support'&&c==='Go to classroom'){state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});v905ClassroomSupport(e);return;}
+   if(e.title==='Facilities Alert'&&c==='Inspect it'){state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});v905FacilitiesInspection(e);return;}
    if(/now|call|classroom|inspect/i.test(c))state.simMinutes=Math.min(1080,state.simMinutes+20);
    if(/Schedule|follow-up|message/i.test(c))addTask(`${e.title}: ${e.text}`,'Today','Normal');
+   if(c==='Send AP')addTask(`AP follow-up: ${e.text}`,'Today','Normal');
+   if(c==='Delegate to head custodian')addTask(`Custodial follow-up: ${e.text}`,'Today','Normal');
    state.schoolHistory.unshift({date:state.date,text:`${e.title}: ${c}.`});
    closeModal();render();
  });
@@ -1611,6 +1694,109 @@ const tickV90Old=playableTick;playableTick=function(minutes=5){tickV90Old(minute
 const dayV90Old=advanceDay;advanceDay=function(){v90AfterDay();dayV90Old();ensureV90State();v90Daily();};
 const renderV90Old=render;render=function(){ensureV90State();renderV90Old();v90ConnectedPanel();};
 const loadV90Old=load;load=function(){let raw=localStorage.getItem(SAVE_KEY);if(raw){try{state=JSON.parse(raw);ensureV90State();toast('V9.0 Connected School save loaded.');render();return;}catch(e){console.error(e)}}let old=localStorage.getItem(V89_SAVE_KEY);if(old){try{state=JSON.parse(old);ensureV90State();state.schoolHistory.unshift({date:state.date,text:'Upgraded Lincoln to V9.0 Connected School.'});toast('Your V8.9 school was upgraded to V9.0.');render();return;}catch(e){console.error(e)}}return loadV90Old();};
+
+
+
+/* ================= V9.0.6 PHONE + COMMAND CENTER TASKS ================= */
+function v906OpenPrincipalTasks(){
+ ensureV90State();
+ let open=(state.principalTasks||[]).filter(x=>!x.done);
+ openModal('✅ Principal Tasks',`<div class="app-sheet">
+   <p class="muted">These are the items currently waiting for your attention. Working a task advances the school clock.</p>
+   <div class="task-modal-list">${open.length?open.map(t=>`
+     <div class="compact-item task-modal-row">
+       <div><strong>${t.text}</strong><br><span class="muted">${t.due||'Today'} • ${t.priority||'Normal'}${t.created?` • added ${t.created}`:''}</span></div>
+       <button class="${t.priority==='High'?'primary':'secondary'}" data-work-task="${t.id}">Work Task</button>
+     </div>`).join(''):'<p class="muted">You are caught up right now.</p>'}</div>
+ </div>`);
+ document.querySelectorAll('[data-work-task]').forEach(b=>b.onclick=()=>{
+   let t=state.principalTasks.find(x=>x.id===b.dataset.workTask);
+   if(!t)return;
+   t.done=true;
+   t.completed=state.date;
+   state.simMinutes=Math.min(1080,state.simMinutes+10);
+   state.schoolHistory.unshift({date:state.date,text:`Principal completed task: ${t.text}`});
+   toast('Task completed.');
+   closeModal();
+   render();
+ });
+}
+
+function v906AnswerAlert(id){
+ ensureV90State();
+ let a=(state.liveAlerts||[]).find(x=>x.id===id);
+ if(!a)return;
+ if(/parent call/i.test(a.title||'')){
+   state.liveAlerts=state.liveAlerts.filter(x=>x.id!==id);
+   state.schoolHistory.unshift({date:state.date,text:'Principal answered a parent call from the office.'});
+   closePhone();
+   v904ParentConversation('Parent Call');
+   return;
+ }
+ if(/wants to talk/i.test(a.title||'')){
+   let name=(a.title||'').replace(/\s+wants to talk.*$/i,'').trim();
+   let e=activeEmployees().find(x=>x.name===name);
+   state.liveAlerts=state.liveAlerts.filter(x=>x.id!==id);
+   closePhone();
+   if(e){state.principalLocation=e.room||'OFFICE';state.selectedRoom=e.room||state.selectedRoom;state.simMinutes=Math.min(1080,state.simMinutes+4);v88TalkEmployee(e);render();}
+   else toast('That employee is no longer available.');
+   return;
+ }
+ if(a.loc&&roomById(a.loc)){
+   state.principalLocation=a.loc;state.selectedRoom=a.loc;state.liveAlerts=state.liveAlerts.filter(x=>x.id!==id);closePhone();state.simMinutes=Math.min(1080,state.simMinutes+4);render();toast(`You went to ${locationLabel(a.loc)}.`);
+ }
+}
+
+renderPhone=function(tab="alerts"){
+ ensureV90State();let body=$("phoneBody");if(!body)return;
+ if(tab==="alerts"){
+   body.innerHTML=state.liveAlerts.length?state.liveAlerts.slice(0,12).map(a=>{
+     let action='';
+     if(/parent call/i.test(a.title||''))action=`<button class="primary phone-alert-action" data-answer-alert="${a.id}">☎️ Answer Parent Call</button>`;
+     else if(/wants to talk/i.test(a.title||''))action=`<button class="primary phone-alert-action" data-answer-alert="${a.id}">💬 Go Talk Now</button>`;
+     else if(a.loc&&roomById(a.loc))action=`<button class="secondary phone-alert-action" data-answer-alert="${a.id}">🚶 Go There</button>`;
+     return `<div class="phone-item"><strong>${a.icon} ${a.title}</strong><span>${mins12(a.time)} • ${a.priority}</span><p>${a.body}</p>${action}</div>`;
+   }).join(""):`<div class="muted">No live alerts yet.</div>`;
+   document.querySelectorAll('[data-answer-alert]').forEach(b=>b.onclick=()=>v906AnswerAlert(b.dataset.answerAlert));
+ }else if(tab==="messages"){
+   body.innerHTML=state.staffMessages.length?state.staffMessages.slice(0,12).map(m=>`<div class="phone-item"><strong>${m.from}</strong><span>${mins12(m.time)}</span><p>${m.text}</p>${m.loc&&roomById(m.loc)?`<button class="secondary phone-message-go" data-msg-loc="${m.loc}">🚶 Go to ${m.loc}</button>`:''}</div>`).join(""):`<div class="muted">No staff messages.</div>`;
+   document.querySelectorAll('[data-msg-loc]').forEach(b=>b.onclick=()=>{state.principalLocation=b.dataset.msgLoc;state.selectedRoom=b.dataset.msgLoc;state.simMinutes=Math.min(1080,state.simMinutes+4);closePhone();render();toast(`You went to ${locationLabel(b.dataset.msgLoc)}.`);});
+ }else{
+   let cal=(state.principalSchedule&&state.principalSchedule.length?state.principalSchedule:state.schedule)||[];
+   body.innerHTML=cal.slice(0,10).map(i=>`<div class="phone-item"><strong>${i.time||""} ${i.title||i.activity||i.item||"Calendar item"}</strong><p>${i.location||""}</p></div>`).join("")||`<div class="muted">No calendar items.</div>`;
+ }
+}
+
+const v84RenderV906Old=v84Render;
+v84Render=function(){
+ v84RenderV906Old();
+ let box=$('v84SchoolDay');
+ if(!box)return;
+ let head=box.querySelector('.section-head');
+ if(head&&!$('v906TaskBtn')){
+   let btn=document.createElement('button');btn.id='v906TaskBtn';btn.className='primary';btn.textContent=`✅ Open Tasks (${state.principalTasks.filter(x=>!x.done).length})`;
+   btn.onclick=v906OpenPrincipalTasks;head.appendChild(btn);
+ }
+ let bc=$('briefingCards');
+ if(bc){
+   [...bc.querySelectorAll('.brief-card')].forEach(card=>{
+     if(/principal tasks/i.test(card.textContent||'')){
+       card.classList.add('clickable-brief');
+       card.setAttribute('role','button');card.setAttribute('tabindex','0');
+       card.title='Open Principal Tasks';
+       card.onclick=v906OpenPrincipalTasks;
+       card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();v906OpenPrincipalTasks();}};
+     }
+   });
+ }
+}
+
+const v85DeskV906Old=v85Desk;
+v85Desk=function(){
+ v85DeskV906Old();
+ let b=$('deskTasks');
+ if(b)b.onclick=()=>{closeModal();v906OpenPrincipalTasks();};
+}
 
 window.addEventListener('error',e=>startupFailure(e.error||e.message));
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initApp,{once:true});else initApp();
