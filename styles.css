@@ -79,3 +79,14 @@
 
 /* V9.2 Relationships & Memory */
 #v92Relationships .v91-strip button strong{display:block;font-size:1.25rem;margin-top:4px}.calendar-day{display:grid;grid-template-columns:90px 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid rgba(127,127,127,.18)}.calendar-day small{opacity:.65}.principal-hub-grid button{cursor:pointer}
+
+/* V9.3 leadership */
+.v93modal{max-height:65vh;overflow:auto}.v93toolbar{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}.v93roomgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}.v93roomgrid section{border:1px solid var(--line,#cbd5e1);padding:10px;border-radius:12px}.v93room{display:flex;flex-direction:column;align-items:flex-start;text-align:left;width:100%;padding:10px;margin:6px 0;gap:4px;border:1px solid var(--line,#cbd5e1);border-radius:9px;background:var(--surface,#fff);color:inherit;cursor:pointer}.v93room:hover{outline:2px solid #6089b7}.v93room span,.v93room small{opacity:.8}.v93form{display:grid;gap:12px}.v93form label{display:grid;gap:5px}.v93form select,.v93form input,.v93form textarea{width:100%;padding:9px;border:1px solid #94a3b8;border-radius:7px;background:var(--surface,#fff);color:inherit}#v93Management .v91-strip button strong{display:block;margin-top:4px}
+
+/* V9.5 desktop campus */
+.v95roomgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px}.v95room{display:flex;flex-direction:column;gap:4px;text-align:left;min-height:94px;border:1px solid var(--border,#bbb);border-radius:9px;padding:10px;background:var(--surface,#fff);color:inherit;cursor:pointer}.v95room small{opacity:.75}.v95room span{font-size:.8rem}.v95here{outline:3px solid #4d91ca}.v95campus{max-height:72vh;overflow:auto}.v93form input,.v93form select{max-width:100%}
+
+/* V9.6 desktop management */
+.v96kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}.v96kpis>div{padding:15px;border:1px solid var(--line,#bbb);border-radius:12px;display:flex;flex-direction:column;gap:4px}.v96kpis strong{font-size:1.6rem}.v96kpis span{font-size:.82rem;opacity:.8}@media(max-width:680px){.v96kpis{grid-template-columns:1fr}}
+/* V9.7 student management */
+.v97student{width:100%;display:flex;justify-content:space-between;align-items:center;text-align:left;margin:6px 0;padding:10px 12px}.v97student span{font-size:.85rem;opacity:.8}.v97grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.v97tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}@media(max-width:850px){.v97grid{grid-template-columns:1fr}.v97student{align-items:flex-start;gap:6px;flex-direction:column}}
